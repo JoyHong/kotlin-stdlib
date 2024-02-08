@@ -1,5 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest package="org.justalk.kotlin.stdlib">
+<manifest package="org.justalk.kotlin.stdlib"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- location 的 locationupdates 需要申请下面的权限 -->
+<!--    &lt;!&ndash;用于访问GPS定位&ndash;&gt;-->
+<!--    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />-->
+<!--    &lt;!&ndash;用于进行网络定位&ndash;&gt;-->
+<!--    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />-->
+<!--    &lt;!&ndash; Required only when requesting background location access on Android 10 (API level 29) and higher. &ndash;&gt;-->
+<!--    &lt;!&ndash; 在较低版本的 Android 系统中, 当应用获得前台位置信息访问权限时, 也会自动获得后台位置信息访问权限 &ndash;&gt;-->
+<!--    &lt;!&ndash; 在搭载 Android 10（API 级别 29）的设备上, 您的应用中的某项功能请求在后台访问位置信息时, 系统权限对话框包含一个名为始终允许的选项.如果用户选择此选项, 您的应用中的相应功能就会获得在后台访问位置信息的权限. &ndash;&gt;-->
+<!--    &lt;!&ndash; 但是，在 Android 11（API 级别 30）及更高版本中, 系统对话框不含始终允许选项. 相反, 用户必须在设置页面上启用后台位置信息 &ndash;&gt;-->
+<!--    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />-->
 
     <!-- location 的 useractivityrecog 需要申请下面的权限 -->
 <!--    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />-->
