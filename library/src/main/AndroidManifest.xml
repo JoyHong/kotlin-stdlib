@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest package="org.justalk.kotlin.stdlib"
-    xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!-- location 的 locationupdates 需要申请下面的权限 -->
 <!--    &lt;!&ndash;用于访问GPS定位&ndash;&gt;-->
