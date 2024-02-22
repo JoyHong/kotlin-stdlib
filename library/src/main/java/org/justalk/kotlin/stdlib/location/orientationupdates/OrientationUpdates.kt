@@ -1,20 +1,14 @@
 package org.justalk.kotlin.stdlib.location.orientationupdates
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Looper
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
-import com.google.android.gms.location.DeviceOrientation
 import com.google.android.gms.location.DeviceOrientationListener
 import com.google.android.gms.location.DeviceOrientationRequest
-import com.google.android.gms.location.LocationCallback
-import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.Priority.PRIORITY_HIGH_ACCURACY
 
 class OrientationUpdates(
     context: Context,
@@ -28,7 +22,6 @@ class OrientationUpdates(
         onUpdate(it.headingDegrees)
     }
 
-    @SuppressLint("MissingPermission")
     private val observer = LifecycleEventObserver { _, event ->
         if (event == Lifecycle.Event.ON_START) {
             locationClient.requestDeviceOrientationUpdates(
