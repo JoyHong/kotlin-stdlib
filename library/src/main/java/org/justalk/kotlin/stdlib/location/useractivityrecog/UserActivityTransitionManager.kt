@@ -74,12 +74,11 @@ class UserActivityTransitionManager(private val context: Context) {
         PendingIntent.getBroadcast(
             context,
             CUSTOM_REQUEST_CODE_USER_ACTION,
-            Intent(CUSTOM_INTENT_USER_ACTION),
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
-                PendingIntent.FLAG_CANCEL_CURRENT
-            } else {
-                PendingIntent.FLAG_MUTABLE
-            }
+            Intent(CUSTOM_INTENT_USER_ACTION).setPackage(context.packageName),
+            // Note: must use FLAG_MUTABLE in order for Play Services to add the result data to the
+            // intent starting in API level 31. Otherwise the BroadcastReceiver will be started but
+            // the Intent will have no data.
+            PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_MUTABLE
         )
     }
 
