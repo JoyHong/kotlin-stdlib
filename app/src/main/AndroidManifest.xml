@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!--用于访问GPS定位-->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <!--用于进行网络定位-->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- Required only when requesting background location access on Android 10 (API level 29) and higher. -->
+    <!-- 在较低版本的 Android 系统中, 当应用获得前台位置信息访问权限时, 也会自动获得后台位置信息访问权限 -->
+    <!-- 在搭载 Android 10（API 级别 29）的设备上, 您的应用中的某项功能请求在后台访问位置信息时, 系统权限对话框包含一个名为始终允许的选项.如果用户选择此选项, 您的应用中的相应功能就会获得在后台访问位置信息的权限. -->
+    <!-- 但是，在 Android 11（API 级别 30）及更高版本中, 系统对话框不含始终允许选项. 相反, 用户必须在设置页面上启用后台位置信息 -->
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
