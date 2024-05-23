@@ -29,8 +29,8 @@ fun View.applyWindowInsets(
 }
 
 @JvmOverloads
-fun View.getWindowInsets(insetTypes: Int = sInsetTypes): Insets {
-    if (!ViewCompat.isLaidOut(this) || isLayoutRequested) {
+fun View.getWindowInsets(insetTypes: Int = sInsetTypes, strictMode: Boolean = true): Insets {
+    if (strictMode && (!ViewCompat.isLaidOut(this) || isLayoutRequested)) {
         throw RuntimeException("getWindowInsets must call after view did onLayout")
     }
     return (context.getActivity()?.window?.decorView ?: this)
