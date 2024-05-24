@@ -12,10 +12,10 @@ private val sInsetTypes =
 
 @JvmOverloads
 fun View.applyWindowInsets(
-    insetsLeft: Boolean = false,
-    insetsTop: Boolean = false,
-    insetsRight: Boolean = false,
-    insetsBottom: Boolean = false
+    insetsLeft: Boolean = true,
+    insetsTop: Boolean = true,
+    insetsRight: Boolean = true,
+    insetsBottom: Boolean = true
 ) {
     ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets ->
         val insetsSystemBars = insets.getInsets(sInsetTypes)
