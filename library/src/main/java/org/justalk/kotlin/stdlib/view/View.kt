@@ -1,9 +1,11 @@
 package org.justalk.kotlin.stdlib.view
 
 import android.view.View
+import android.view.ViewGroup.MarginLayoutParams
 import androidx.core.graphics.Insets
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updateLayoutParams
 import androidx.core.view.updatePadding
 import org.justalk.kotlin.stdlib.context.getActivity
 
@@ -15,7 +17,8 @@ fun View.applyWindowInsets(
     insetsLeft: Boolean = true,
     insetsTop: Boolean = true,
     insetsRight: Boolean = true,
-    insetsBottom: Boolean = true
+    insetsBottom: Boolean = true,
+    updatePadding: Boolean = true
 ) {
     ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets ->
         val insetsSystemBars = insets.getInsets(sInsetTypes)
@@ -23,7 +26,13 @@ fun View.applyWindowInsets(
         val top = if (insetsTop) insetsSystemBars.top else 0
         val right = if (insetsRight) insetsSystemBars.right else 0
         val bottom = if (insetsBottom) insetsSystemBars.bottom else 0
-        v.updatePadding(left, top, right, bottom)
+        if (updatePadding) {
+            v.updatePadding(left, top, right, bottom)
+        } else {
+            v.updateLayoutParams<MarginLayoutParams> {
+                setMargins(left, top, right, bottom)
+            }
+        }
         WindowInsetsCompat.CONSUMED
     }
 }
