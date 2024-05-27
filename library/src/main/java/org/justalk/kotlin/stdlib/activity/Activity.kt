@@ -8,8 +8,7 @@ import org.justalk.kotlin.stdlib.view.hideIme
 import org.justalk.kotlin.stdlib.view.hideNavigationBars
 import org.justalk.kotlin.stdlib.view.hideStatusBars
 import org.justalk.kotlin.stdlib.view.hideSystemBars
-import org.justalk.kotlin.stdlib.view.setLightNavigationBars
-import org.justalk.kotlin.stdlib.view.setLightStatusBars
+import org.justalk.kotlin.stdlib.view.setLightSystemBars
 import org.justalk.kotlin.stdlib.view.showIme
 import org.justalk.kotlin.stdlib.view.showNavigationBars
 import org.justalk.kotlin.stdlib.view.showStatusBars
@@ -66,14 +65,9 @@ fun Activity.hideIme() {
     window.hideIme()
 }
 
-/** 设置状态栏内容是否是 light 模式 */
-fun Activity.setLightStatusBars(isLight: Boolean) {
-    window.setLightStatusBars(isLight)
-}
-
-/** 设置导航栏内容是否是 light 模式 */
-fun Activity.setLightNavigationBars(isLight: Boolean) {
-    window.setLightNavigationBars(isLight)
+/** 设置系统栏内容是否是 light 模式 */
+fun Activity.setLightSystemBars(isLight: Boolean) {
+    window.setLightSystemBars(isLight)
 }
 
 fun Activity.compatCombo(): WindowCompatCombo {
