@@ -1,7 +1,9 @@
 package org.justalk.kotlin.stdlib.activity
 
 import android.app.Activity
+import android.graphics.Color
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import org.justalk.kotlin.stdlib.view.WindowCompatCombo
 import org.justalk.kotlin.stdlib.view.hideIme
@@ -22,7 +24,7 @@ import org.justalk.kotlin.stdlib.view.showSystemBars
 //  </item>
 //</style>
 fun ComponentActivity.setImmersiveMode() {
-    enableEdgeToEdge()
+    enableEdgeToEdge(navigationBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT))
 }
 
 /** 显示系统栏(状态栏和导航栏) */

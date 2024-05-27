@@ -19,7 +19,10 @@ internal fun Window.showSystemBars() {
 
 /** 隐藏系统栏(状态栏和导航栏) */
 internal fun Window.hideSystemBars() {
-    getInsetsControllerCompat().hide(WindowInsetsCompat.Type.systemBars())
+    getInsetsControllerCompat().also { controller ->
+        controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        controller.hide(WindowInsetsCompat.Type.systemBars())
+    }
 }
 
 /** 显示状态栏 */
@@ -54,9 +57,9 @@ internal fun Window.hideIme() {
 
 /** 设置系统栏内容是否是 light 模式 */
 internal fun Window.setLightSystemBars(isLight: Boolean) {
-    getInsetsControllerCompat().also {
-        it.isAppearanceLightStatusBars = isLight
-        it.isAppearanceLightNavigationBars = isLight
+    getInsetsControllerCompat().also { controller ->
+        controller.isAppearanceLightStatusBars = isLight
+        controller.isAppearanceLightNavigationBars = isLight
     }
 }
 
