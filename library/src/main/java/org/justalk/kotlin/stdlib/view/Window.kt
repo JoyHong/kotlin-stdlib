@@ -52,12 +52,14 @@ internal fun Window.hideIme() {
     getInsetsControllerCompat().hide(WindowInsetsCompat.Type.ime())
 }
 
-/** 设置系统栏内容是否是 light 模式 */
-internal fun Window.setLightSystemBars(isLight: Boolean) {
-    getInsetsControllerCompat().also {
-        it.isAppearanceLightStatusBars = isLight
-        it.isAppearanceLightNavigationBars = isLight
-    }
+/** 设置状态栏内容是否是 light 模式 */
+internal fun Window.setLightStatusBars(isLight: Boolean) {
+    getInsetsControllerCompat().isAppearanceLightStatusBars = isLight
+}
+
+/** 设置导航栏内容是否是 light 模式 */
+internal fun Window.setLightNavigationBars(isLight: Boolean) {
+    getInsetsControllerCompat().isAppearanceLightNavigationBars = isLight
 }
 
 internal fun Window.compatCombo(): WindowCompatCombo {
@@ -108,8 +110,12 @@ class WindowCompatCombo(window: Window) {
         return this
     }
 
-    fun setLightSystemBars(isLight: Boolean): WindowCompatCombo {
+    fun setLightStatusBars(isLight: Boolean): WindowCompatCombo {
         insetsControllerCompat.isAppearanceLightStatusBars = isLight
+        return this
+    }
+
+    fun setLightNavigationBars(isLight: Boolean): WindowCompatCombo {
         insetsControllerCompat.isAppearanceLightNavigationBars = isLight
         return this
     }
