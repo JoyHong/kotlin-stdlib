@@ -33,7 +33,9 @@ fun View.applyWindowInsets(
                 setMargins(left, top, right, bottom)
             }
         }
-        WindowInsetsCompat.CONSUMED
+        insets
+        // 如果返回 CONSUMED, 即拦截了, 不会再传递下去给子控件
+//        WindowInsetsCompat.CONSUMED
     }
 }
 
