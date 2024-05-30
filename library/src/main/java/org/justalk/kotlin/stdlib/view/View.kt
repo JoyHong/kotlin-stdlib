@@ -1,6 +1,7 @@
 package org.justalk.kotlin.stdlib.view
 
 import android.view.View
+import android.view.View.OnAttachStateChangeListener
 import android.view.ViewGroup.MarginLayoutParams
 import androidx.core.graphics.Insets
 import androidx.core.view.ViewCompat
@@ -36,6 +37,21 @@ fun View.applyWindowInsets(
         insets
         // 表示视图已经消耗了指定的窗口内边距, 当视图消耗了窗口内边距后, 它将不会再将该内边距传递给其子视图
 //        WindowInsetsCompat.CONSUMED
+    }
+    requestApplyInsetsWhenAttached(this)
+}
+
+private fun requestApplyInsetsWhenAttached(view: View) {
+    if (ViewCompat.isAttachedToWindow(view)) {
+        ViewCompat.requestApplyInsets(view)
+    } else {
+        view.addOnAttachStateChangeListener(object : OnAttachStateChangeListener {
+            override fun onViewAttachedToWindow(v: View) {
+                v.removeOnAttachStateChangeListener(this)
+                ViewCompat.requestApplyInsets(v)
+            }
+            override fun onViewDetachedFromWindow(v: View) {}
+        })
     }
 }
 
