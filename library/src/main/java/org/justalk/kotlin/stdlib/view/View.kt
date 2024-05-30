@@ -34,7 +34,7 @@ fun View.applyWindowInsets(
             }
         }
         insets
-        // 如果返回 CONSUMED, 即拦截了, 不会再传递下去给子控件
+        // 表示视图已经消耗了指定的窗口内边距, 当视图消耗了窗口内边距后, 它将不会再将该内边距传递给其子视图
 //        WindowInsetsCompat.CONSUMED
     }
 }
