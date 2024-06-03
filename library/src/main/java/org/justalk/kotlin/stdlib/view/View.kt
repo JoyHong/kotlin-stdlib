@@ -66,3 +66,10 @@ fun View.getWindowInsets(insetTypes: Int = sInsetTypes): Insets {
                 .getInsets(insetTypes)
         } ?: Insets.NONE
 }
+
+/**
+ * 是否是从右往左的布局
+ */
+fun View.isLayoutRtl(): Boolean {
+    return ViewCompat.getLayoutDirection(this) == ViewCompat.LAYOUT_DIRECTION_RTL
+}
