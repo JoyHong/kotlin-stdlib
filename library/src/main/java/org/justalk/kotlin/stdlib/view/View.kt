@@ -22,11 +22,11 @@ fun View.applyWindowInsets(
     updatePadding: Boolean = true
 ) {
     ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets ->
-        val insetsSystemBars = insets.getInsets(sInsetTypes)
-        val left = if (insetsLeft) insetsSystemBars.left else 0
-        val top = if (insetsTop) insetsSystemBars.top else 0
-        val right = if (insetsRight) insetsSystemBars.right else 0
-        val bottom = if (insetsBottom) insetsSystemBars.bottom else 0
+        val typeInsets = insets.getInsets(sInsetTypes)
+        val left = if (insetsLeft) typeInsets.left else 0
+        val top = if (insetsTop) typeInsets.top else 0
+        val right = if (insetsRight) typeInsets.right else 0
+        val bottom = if (insetsBottom) typeInsets.bottom else 0
         if (updatePadding) {
             v.updatePadding(left, top, right, bottom)
         } else {
@@ -37,6 +37,15 @@ fun View.applyWindowInsets(
         insets
         // 表示视图已经消耗了指定的窗口内边距, 当视图消耗了窗口内边距后, 它将不会再将该内边距传递给其子视图
 //        WindowInsetsCompat.CONSUMED
+    }
+    requestApplyInsetsWhenAttached(this)
+}
+
+fun View.applyWindowInsetsListener(listener: (v: View, insets: Insets) -> Unit?) {
+    ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets ->
+        val typeInsets = insets.getInsets(sInsetTypes)
+        listener.invoke(v, typeInsets)
+        insets
     }
     requestApplyInsetsWhenAttached(this)
 }
