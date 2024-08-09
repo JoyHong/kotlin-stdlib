@@ -48,7 +48,7 @@ open class LinearItemDecoration(
 ) : RecyclerView.ItemDecoration() {
 
     final override fun getItemOffsets(outRect: Rect, view: View, parent: RecyclerView, state: RecyclerView.State) {
-        if (!onInterceptItemOffsets(view, parent)) {
+        if (canDrawItemDecoration(view, parent)) {
             if (alignTop) {
                 outRect.top = offsets
             } else {
@@ -72,7 +72,7 @@ open class LinearItemDecoration(
             val right = parent.width - parent.paddingRight
             for (i in 0 until parent.childCount) {
                 val child = parent.getChildAt(i)
-                if (!onInterceptItemColor(child, parent)) {
+                if (canDrawItemDecoration(child, parent)) {
                     val params = child.layoutParams as RecyclerView.LayoutParams
                     val top: Int
                     val bottom: Int
@@ -93,12 +93,8 @@ open class LinearItemDecoration(
         super.onDrawOver(c, parent, state)
     }
 
-    open fun onInterceptItemOffsets(view: View, parent: RecyclerView): Boolean {
-        return false
-    }
-
-    open fun onInterceptItemColor(view: View, parent: RecyclerView): Boolean {
-        return false
+    open fun canDrawItemDecoration(view: View, parent: RecyclerView): Boolean {
+        return true
     }
 
 }
