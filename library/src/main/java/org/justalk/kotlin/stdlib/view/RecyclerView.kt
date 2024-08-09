@@ -35,12 +35,25 @@ fun RecyclerView.applyVerticalTranslation() {
     })
 }
 
-open class LinearItemDecoration(private val offsets: Int, private val color: Int? = null) :
-    RecyclerView.ItemDecoration() {
+/**
+ * LinearLayoutManager 的 RecyclerView 的分割线
+ * @param offsets   分割线的高度
+ * @param color     分割线的颜色, 默认是透明的
+ * @param alignTop  分割线的位置是否在 item 控件的上方, 默认是在下方
+ */
+open class LinearItemDecoration(
+    private val offsets: Int,
+    private val color: Int? = null,
+    private val alignTop: Boolean = false
+) : RecyclerView.ItemDecoration() {
 
     final override fun getItemOffsets(outRect: Rect, view: View, parent: RecyclerView, state: RecyclerView.State) {
         if (!onInterceptItemOffsets(view, parent)) {
-            outRect.bottom = offsets
+            if (alignTop) {
+                outRect.top = offsets
+            } else {
+                outRect.bottom = offsets
+            }
         }
     }
 
@@ -61,8 +74,15 @@ open class LinearItemDecoration(private val offsets: Int, private val color: Int
                 val child = parent.getChildAt(i)
                 if (!onInterceptItemColor(child, parent)) {
                     val params = child.layoutParams as RecyclerView.LayoutParams
-                    val top = child.bottom + params.bottomMargin
-                    val bottom = top + offsets
+                    val top: Int
+                    val bottom: Int
+                    if (alignTop) {
+                        bottom = child.top - params.topMargin
+                        top = bottom - offsets
+                    } else {
+                        top = child.bottom + params.bottomMargin
+                        bottom = top + offsets
+                    }
                     canvas.drawRect(left.toFloat(), top.toFloat(), right.toFloat(), bottom.toFloat(), paint1)
                 }
             }
