@@ -1,5 +1,8 @@
 package org.justalk.kotlin.stdlib.view
 
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.Rect
 import android.view.View
 import androidx.recyclerview.widget.RecyclerView
 
@@ -30,4 +33,52 @@ fun RecyclerView.applyVerticalTranslation() {
             setListVerticalTranslation()
         }
     })
+}
+
+open class LinearItemDecoration(private val offsets: Int, private val color: Int? = null) :
+    RecyclerView.ItemDecoration() {
+
+    final override fun getItemOffsets(outRect: Rect, view: View, parent: RecyclerView, state: RecyclerView.State) {
+        if (!onInterceptItemOffsets(view, parent)) {
+            outRect.bottom = offsets
+        }
+    }
+
+    private val paint by lazy {
+        color?.let { color1 ->
+            Paint().also { paint1 ->
+                paint1.color = color1
+                paint1.isAntiAlias = true
+            }
+        }
+    }
+
+    final override fun onDraw(canvas: Canvas, parent: RecyclerView, state: RecyclerView.State) {
+        paint?.let { paint1 ->
+            val left = parent.paddingLeft
+            val right = parent.width - parent.paddingRight
+            for (i in 0 until parent.childCount) {
+                val child = parent.getChildAt(i)
+                if (!onInterceptItemColor(child, parent)) {
+                    val params = child.layoutParams as RecyclerView.LayoutParams
+                    val top = child.bottom + params.bottomMargin
+                    val bottom = top + offsets
+                    canvas.drawRect(left.toFloat(), top.toFloat(), right.toFloat(), bottom.toFloat(), paint1)
+                }
+            }
+        }
+    }
+
+    final override fun onDrawOver(c: Canvas, parent: RecyclerView, state: RecyclerView.State) {
+        super.onDrawOver(c, parent, state)
+    }
+
+    open fun onInterceptItemOffsets(view: View, parent: RecyclerView): Boolean {
+        return false
+    }
+
+    open fun onInterceptItemColor(view: View, parent: RecyclerView): Boolean {
+        return false
+    }
+
 }
