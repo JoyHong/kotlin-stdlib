@@ -46,7 +46,8 @@ class LocationSettingsUtil {
             }
             if (ex !is ResolvableApiException) {
                 // Ignore, should be an impossible error
-                throw ex
+                launcher.launch(IntentSenderRequest.Builder(ex.status.resolution!!.intentSender).build())
+                return
             }
             // Location settings are not satisfied. But could be fixed by showing the user a dialog.
             launcher.launch(IntentSenderRequest.Builder(ex.resolution.intentSender).build())
