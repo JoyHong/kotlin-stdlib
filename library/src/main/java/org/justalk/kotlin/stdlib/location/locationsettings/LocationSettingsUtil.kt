@@ -34,6 +34,7 @@ class LocationSettingsUtil {
 
         /**
          * 根据 checkSettings 的异常, 打开设置界面
+         * https://developers.google.com/android/reference/com/google/android/gms/location/SettingsClient
          */
         @Throws(ApiException::class)
         fun startResolutionForException(
@@ -43,7 +44,12 @@ class LocationSettingsUtil {
             if (ex.statusCode != LocationSettingsStatusCodes.RESOLUTION_REQUIRED) {
                 throw ex
             }
-            launcher.launch(IntentSenderRequest.Builder((ex as ResolvableApiException).resolution.intentSender).build())
+            if (ex !is ResolvableApiException) {
+                // Ignore, should be an impossible error
+                throw ex
+            }
+            // Location settings are not satisfied. But could be fixed by showing the user a dialog.
+            launcher.launch(IntentSenderRequest.Builder(ex.resolution.intentSender).build())
         }
 
     }
