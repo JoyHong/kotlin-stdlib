@@ -22,9 +22,11 @@ class LocationSettingsUtil {
         @Throws(ApiException::class)
         suspend fun checkSettings(
             context: Context,
-            request: LocationRequest
+            request: LocationRequest,
+            alwaysShow: Boolean = false
         ): LocationSettingsStates? {
             val requestBuilder = LocationSettingsRequest.Builder()
+                .setAlwaysShow(alwaysShow)
                 .addLocationRequest(request)
             return LocationServices.getSettingsClient(context)
                 .checkLocationSettings(requestBuilder.build())
@@ -46,7 +48,7 @@ class LocationSettingsUtil {
             }
             if (ex !is ResolvableApiException) {
                 // Ignore, should be an impossible error
-                launcher.launch(IntentSenderRequest.Builder(ex.status.resolution!!.intentSender).build())
+                launcher.launch(IntentSenderRequest.Builder(ResolvableApiException(ex.status).resolution.intentSender).build())
                 return
             }
             // Location settings are not satisfied. But could be fixed by showing the user a dialog.
