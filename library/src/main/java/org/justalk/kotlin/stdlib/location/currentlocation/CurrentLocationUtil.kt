@@ -15,7 +15,7 @@ class CurrentLocationUtil {
         suspend fun getCurrentLocation(
             context: Context,
             priority: Int = Priority.PRIORITY_HIGH_ACCURACY
-        ): Location? {
+        ): Location {
             return LocationServices.getFusedLocationProviderClient(context)
                 .getCurrentLocation(priority, CancellationTokenSource().token)
                 .await()
