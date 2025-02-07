@@ -2,7 +2,7 @@ package org.justalk.kotlin.stdlib
 
 import android.os.Looper
 
-class Utils {
+object Utils {
 
     /**
      * 是否在主线程
