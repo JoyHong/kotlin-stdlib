@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.justalk.kotlin.stdlib.widget.textview.hepler;
+package org.justalk.kotlin.stdlib.widget.qmui.hepler;
 
 import android.annotation.TargetApi;
 import android.content.Context;
@@ -37,7 +37,7 @@ import androidx.core.content.ContextCompat;
 
 
 import org.justalk.kotlin.stdlib.R;
-import org.justalk.kotlin.stdlib.widget.textview.interf.IQMUILayout;
+import org.justalk.kotlin.stdlib.widget.qmui.interf.IQMUILayout;
 
 import java.lang.ref.WeakReference;
 

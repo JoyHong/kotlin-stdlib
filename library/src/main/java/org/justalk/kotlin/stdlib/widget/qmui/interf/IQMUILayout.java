@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.justalk.kotlin.stdlib.widget.textview.interf;
+package org.justalk.kotlin.stdlib.widget.qmui.interf;
 
 import android.view.View;
 
@@ -22,7 +22,7 @@ import androidx.annotation.ColorInt;
 import androidx.annotation.IntDef;
 
 
-import org.justalk.kotlin.stdlib.widget.textview.hepler.QMUILayoutHelper;
+import org.justalk.kotlin.stdlib.widget.qmui.hepler.QMUILayoutHelper;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

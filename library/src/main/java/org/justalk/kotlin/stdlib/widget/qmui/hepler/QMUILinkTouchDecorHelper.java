@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.justalk.kotlin.stdlib.widget.textview.hepler;
+package org.justalk.kotlin.stdlib.widget.qmui.hepler;
 
 import android.text.Layout;
 import android.text.Selection;
@@ -25,8 +25,8 @@ import android.widget.TextView;
 
 
 import org.justalk.kotlin.stdlib.BuildConfig;
-import org.justalk.kotlin.stdlib.widget.textview.interf.ISpanTouchFix;
-import org.justalk.kotlin.stdlib.widget.textview.interf.ITouchableSpan;
+import org.justalk.kotlin.stdlib.widget.qmui.interf.ISpanTouchFix;
+import org.justalk.kotlin.stdlib.widget.qmui.interf.ITouchableSpan;
 
 import java.lang.ref.WeakReference;
 

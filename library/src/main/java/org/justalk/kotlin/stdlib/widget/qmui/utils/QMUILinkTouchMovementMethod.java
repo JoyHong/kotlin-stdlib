@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.justalk.kotlin.stdlib.widget.textview.utils;
+package org.justalk.kotlin.stdlib.widget.qmui.utils;
 
 import android.text.Spannable;
 import android.text.method.LinkMovementMethod;
@@ -23,7 +23,7 @@ import android.text.method.Touch;
 import android.view.MotionEvent;
 import android.widget.TextView;
 
-import org.justalk.kotlin.stdlib.widget.textview.hepler.QMUILinkTouchDecorHelper;
+import org.justalk.kotlin.stdlib.widget.qmui.hepler.QMUILinkTouchDecorHelper;
 
 
 /**

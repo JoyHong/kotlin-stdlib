@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.justalk.kotlin.stdlib.widget.textview.utils;
+package org.justalk.kotlin.stdlib.widget.qmui.utils;
 
 /*
  * Copyright (C) 2007 The Android Open Source Project
@@ -47,8 +47,8 @@ import android.webkit.WebView;
 import android.widget.TextView;
 
 
-import org.justalk.kotlin.stdlib.widget.textview.interf.ITouchableSpan;
-import org.justalk.kotlin.stdlib.widget.textview.interf.QMUIOnSpanClickListener;
+import org.justalk.kotlin.stdlib.widget.qmui.interf.ITouchableSpan;
+import org.justalk.kotlin.stdlib.widget.qmui.interf.QMUIOnSpanClickListener;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;

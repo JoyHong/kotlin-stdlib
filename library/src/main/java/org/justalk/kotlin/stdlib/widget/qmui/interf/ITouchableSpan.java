@@ -1,7 +1,7 @@
 /*
  * Tencent is pleased to support the open source community by making QMUI_Android available.
  *
- * Copyright (C) 2017-2019 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
  * Licensed under the MIT License (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-package org.justalk.kotlin.stdlib.widget.textview.interf;
+package org.justalk.kotlin.stdlib.widget.qmui.interf;
+
+import android.view.View;
 
 /**
- * 在 pressed 和 disabled 时改变 View 的透明度的接口
+ * @author cginechen
+ * @date 2017-03-20
  */
-public interface QMUIAlphaViewInf {
 
-    /**
-     * 设置是否要在 press 时改变透明度
-     *
-     * @param changeAlphaWhenPress 是否要在 press 时改变透明度
-     */
-    void setChangeAlphaWhenPress(boolean changeAlphaWhenPress);
+public interface ITouchableSpan {
+    void setPressed(boolean pressed);
+    void onClick(View widget);
 }

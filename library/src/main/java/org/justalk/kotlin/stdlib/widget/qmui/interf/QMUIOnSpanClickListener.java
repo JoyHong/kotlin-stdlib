@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.justalk.kotlin.stdlib.widget.textview.interf;
+package org.justalk.kotlin.stdlib.widget.qmui.interf;
 
 /**
  * @author cginechen

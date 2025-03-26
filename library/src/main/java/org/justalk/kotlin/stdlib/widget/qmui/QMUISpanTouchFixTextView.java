@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.justalk.kotlin.stdlib.widget.textview.view;
+package org.justalk.kotlin.stdlib.widget.qmui;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -25,15 +25,15 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 
 import androidx.annotation.ColorInt;
-import androidx.appcompat.widget.AppCompatTextView;
+import androidx.emoji.widget.EmojiAppCompatTextView;
 
-import org.justalk.kotlin.stdlib.widget.textview.hepler.QMUILayoutHelper;
-import org.justalk.kotlin.stdlib.widget.textview.interf.IQMUILayout;
-import org.justalk.kotlin.stdlib.widget.textview.interf.ISpanTouchFix;
-import org.justalk.kotlin.stdlib.widget.textview.utils.QMUILinkTouchMovementMethod;
+import org.justalk.kotlin.stdlib.widget.qmui.hepler.QMUILayoutHelper;
+import org.justalk.kotlin.stdlib.widget.qmui.interf.IQMUILayout;
+import org.justalk.kotlin.stdlib.widget.qmui.interf.ISpanTouchFix;
+import org.justalk.kotlin.stdlib.widget.qmui.utils.QMUILinkTouchMovementMethod;
 
 
-public class QMUISpanTouchFixTextView extends AppCompatTextView implements ISpanTouchFix, IQMUILayout {
+public class QMUISpanTouchFixTextView extends EmojiAppCompatTextView implements ISpanTouchFix, IQMUILayout {
     /**
      * 记录当前 Touch 事件对应的点是不是点在了 span 上面
      */

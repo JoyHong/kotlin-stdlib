@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package org.justalk.kotlin.stdlib.widget.textview.view;
+package org.justalk.kotlin.stdlib.widget.qmui;
 
 import android.content.Context;
 import android.util.AttributeSet;
 
-import org.justalk.kotlin.stdlib.widget.textview.hepler.QMUIAlphaViewHelper;
-import org.justalk.kotlin.stdlib.widget.textview.interf.QMUIAlphaViewInf;
+import org.justalk.kotlin.stdlib.widget.qmui.hepler.QMUIAlphaViewHelper;
+import org.justalk.kotlin.stdlib.widget.qmui.interf.QMUIAlphaViewInf;
 
 
 /**

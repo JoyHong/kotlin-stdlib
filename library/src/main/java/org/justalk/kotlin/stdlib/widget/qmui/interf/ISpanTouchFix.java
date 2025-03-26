@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package org.justalk.kotlin.stdlib.widget.textview.interf;
-
-import android.view.View;
+package org.justalk.kotlin.stdlib.widget.qmui.interf;
 
 /**
  * @author cginechen
- * @date 2017-03-20
+ * @date 2017-08-07
  */
 
-public interface ITouchableSpan {
-    void setPressed(boolean pressed);
-    void onClick(View widget);
+public interface ISpanTouchFix {
+    /**
+     * 记录当前 Touch 事件对应的点是不是点在了 span 上面
+     */
+    void setTouchSpanHit(boolean hit);
 }

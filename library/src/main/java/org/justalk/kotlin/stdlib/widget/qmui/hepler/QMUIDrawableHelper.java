@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.justalk.kotlin.stdlib.widget.textview.hepler;
+package org.justalk.kotlin.stdlib.widget.qmui.hepler;
 
 import android.graphics.Color;
 import android.graphics.ColorFilter;

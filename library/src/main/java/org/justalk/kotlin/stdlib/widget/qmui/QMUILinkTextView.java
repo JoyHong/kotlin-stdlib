@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.justalk.kotlin.stdlib.widget.textview.view;
+package org.justalk.kotlin.stdlib.widget.qmui;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -38,9 +38,9 @@ import androidx.core.content.ContextCompat;
 
 
 import org.justalk.kotlin.stdlib.R;
-import org.justalk.kotlin.stdlib.widget.textview.interf.QMUIOnSpanClickListener;
-import org.justalk.kotlin.stdlib.widget.textview.utils.QMUILinkTouchMovementMethod;
-import org.justalk.kotlin.stdlib.widget.textview.utils.QMUILinkify;
+import org.justalk.kotlin.stdlib.widget.qmui.interf.QMUIOnSpanClickListener;
+import org.justalk.kotlin.stdlib.widget.qmui.utils.QMUILinkTouchMovementMethod;
+import org.justalk.kotlin.stdlib.widget.qmui.utils.QMUILinkify;
 
 import java.util.HashSet;
 import java.util.Set;
