@@ -468,7 +468,7 @@ public class QMUILinkify {
                     ds.bgColor = mPressed ? pressedBgColor : normalBgColor;
                 }
                 super.updateDrawState(ds);
-                ds.setUnderlineText(false);
+                ds.setUnderlineText(true);
             }
 
         }, start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
