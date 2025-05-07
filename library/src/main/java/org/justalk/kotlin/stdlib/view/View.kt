@@ -3,6 +3,7 @@ package org.justalk.kotlin.stdlib.view
 import android.view.View
 import android.view.View.OnAttachStateChangeListener
 import android.view.ViewGroup.MarginLayoutParams
+import android.view.ViewTreeObserver
 import androidx.core.graphics.Insets
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -81,4 +82,16 @@ fun View.getWindowInsets(insetTypes: Int = sInsetTypes): Insets {
  */
 fun View.isLayoutRtl(): Boolean {
     return ViewCompat.getLayoutDirection(this) == ViewCompat.LAYOUT_DIRECTION_RTL
+}
+
+/**
+ * 区别于 doOnLayout, doOnLayout 回调并不保证视图已经完全测量和布局好, 所以此时获取的 View 的狂高可能还是为 0
+ */
+inline fun View.doOnGlobalLayout(crossinline action: (view: View) -> Unit) {
+    viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
+        override fun onGlobalLayout() {
+            viewTreeObserver.removeOnGlobalLayoutListener(this)
+            action(this@doOnGlobalLayout)
+        }
+    })
 }
