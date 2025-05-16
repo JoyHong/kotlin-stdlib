@@ -84,9 +84,7 @@ fun View.isLayoutRtl(): Boolean {
     return ViewCompat.getLayoutDirection(this) == ViewCompat.LAYOUT_DIRECTION_RTL
 }
 
-/**
- * 区别于 doOnLayout, doOnLayout 回调并不保证视图已经完全测量和布局好, 所以此时获取的 View 的宽高可能还是为 0
- */
+@Deprecated("建议都使用 doOnLayout, 在回调里判断 view 的宽高是否有效, 无效则丢弃回调", ReplaceWith("doOnLayout"))
 inline fun View.doOnGlobalLayout(crossinline action: (view: View) -> Unit) {
     viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
         override fun onGlobalLayout() {
