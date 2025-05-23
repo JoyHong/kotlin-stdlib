@@ -81,6 +81,7 @@ object BluetoothUtil {
      *
      * @return true if call success; otherwise false
      */
+    @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
     fun connect(bluetoothHeadset: BluetoothHeadset, device: BluetoothDevice): Boolean {
         try {
             val connectMethod =
