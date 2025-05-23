@@ -108,11 +108,11 @@ class MainFragment : Fragment(R.layout.fragment_main) {
             activityResult.data?.let { intent ->
                 IntentCompat.getParcelableExtra(intent, CompanionDeviceManager.EXTRA_DEVICE, BluetoothDevice::class.java)
             }?.let { deviceToPair ->
-                if (BluetoothUtil.isConnected(bluetoothHeadset, deviceToPair)) {
+                if (BluetoothUtil.getConnectionState(bluetoothHeadset!!, deviceToPair) == BluetoothProfile.STATE_CONNECTED) {
                     return@let
                 }
                 if (BluetoothUtil.isBonded(bluetoothAdapter, deviceToPair)) {
-                    BluetoothUtil.connect(bluetoothHeadset, deviceToPair)
+                    BluetoothUtil.connect(bluetoothHeadset!!, deviceToPair)
                 } else {
                     BluetoothUtil.bond(deviceToPair)
                 }

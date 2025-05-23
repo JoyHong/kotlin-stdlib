@@ -81,24 +81,26 @@ object BluetoothUtil {
      *
      * @return true if call success; otherwise false
      */
-    fun connect(bluetoothHeadset: BluetoothHeadset?, device: BluetoothDevice): Boolean {
+    fun connect(bluetoothHeadset: BluetoothHeadset, device: BluetoothDevice): Boolean {
         try {
             val connectMethod =
                 BluetoothHeadset::class.java.getMethod("connect", BluetoothDevice::class.java)
             connectMethod.invoke(bluetoothHeadset, device)
             return true
-        } catch (e: Exception) {
-            e.printStackTrace()
+        } catch (tr: Throwable) {
+            tr.printStackTrace()
             return false
         }
     }
 
     /**
-     * Checks if device is connected
+     * Get device connection state
+     *
+     * @see BluetoothProfile.STATE_CONNECTED
      */
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
-    fun isConnected(bluetoothHeadset: BluetoothHeadset?, device: BluetoothDevice): Boolean {
-        return bluetoothHeadset?.getConnectionState(device) == BluetoothProfile.STATE_CONNECTED
+    fun getConnectionState(bluetoothHeadset: BluetoothHeadset, device: BluetoothDevice): Int {
+        return bluetoothHeadset.getConnectionState(device)
     }
 
 }
