@@ -1,8 +1,8 @@
 package org.justalk.kotlin.stdlib.bluetooth
 
+import android.bluetooth.BluetoothA2dp
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothHeadset
 import android.bluetooth.BluetoothProfile
 import android.content.Intent
 import androidx.activity.result.ActivityResultLauncher
@@ -61,32 +61,28 @@ object BluetoothUtil {
     /**
      * Connect device
      *
-     * @param bluetoothHeadset initialize from below code
+     * @param bluetoothA2dp initialize from below code
      *
-     * bluetoothAdapter.getProfileProxy(requireContext(), object : ServiceListener {
+     * bluetoothAdapter.getProfileProxy(context, object : ServiceListener {
      *     override fun onServiceConnected(profile: Int, proxy: BluetoothProfile) {
-     *         if (profile == BluetoothProfile.HEADSET) {
-     *             bluetoothHeadset = proxy as BluetoothHeadset
-     *             }
-     *         }
+     *         bluetoothA2dp = proxy as BluetoothA2dp
+     *     }
      *
      *     override fun onServiceDisconnected(profile: Int) {
-     *         if (profile == BluetoothProfile.HEADSET) {
-     *             bluetoothHeadset = null
-     *         }
+     *         bluetoothHeadset = null
      *     }
-     * }, BluetoothProfile.HEADSET)
+     * }, BluetoothProfile.A2DP)
      *
-     * remember to close use bluetoothAdapter.closeProfileProxy(BluetoothProfile.HEADSET, bluetoothHeadset)
+     * remember to close use bluetoothAdapter.closeProfileProxy(BluetoothProfile.A2DP, bluetoothA2dp)
      *
      * @return true if call success; otherwise false
      */
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
-    fun connect(bluetoothHeadset: BluetoothHeadset, device: BluetoothDevice): Boolean {
+    fun connect(bluetoothA2dp: BluetoothA2dp, device: BluetoothDevice): Boolean {
         try {
             val connectMethod =
-                BluetoothHeadset::class.java.getMethod("connect", BluetoothDevice::class.java)
-            connectMethod.invoke(bluetoothHeadset, device)
+                BluetoothA2dp::class.java.getMethod("connect", BluetoothDevice::class.java)
+            connectMethod.invoke(bluetoothA2dp, device)
             return true
         } catch (tr: Throwable) {
             tr.printStackTrace()
@@ -100,8 +96,8 @@ object BluetoothUtil {
      * @see BluetoothProfile.STATE_CONNECTED
      */
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
-    fun getConnectionState(bluetoothHeadset: BluetoothHeadset, device: BluetoothDevice): Int {
-        return bluetoothHeadset.getConnectionState(device)
+    fun getConnectionState(bluetoothA2dp: BluetoothA2dp, device: BluetoothDevice): Int {
+        return bluetoothA2dp.getConnectionState(device)
     }
 
 }
