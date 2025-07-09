@@ -7,6 +7,7 @@ import android.os.Looper
 import android.util.Log
 import androidx.annotation.IntRange
 import androidx.exifinterface.media.ExifInterface
+import org.justalk.kotlin.stdlib.Utils.inMainThread
 
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -42,7 +43,7 @@ object ImageCompressor {
         @IntRange(from = 0, to = 100) quality: Int = 80,
         outputFormat: Bitmap.CompressFormat = Bitmap.CompressFormat.JPEG
     ) {
-        assert(Thread.currentThread() != Looper.getMainLooper().thread) {
+        assert(!inMainThread) {
             "Avoid calling this on the main thread"
         }
         val srcBmp: Bitmap?  // 初始解码的Bitmap
