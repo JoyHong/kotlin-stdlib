@@ -3,7 +3,6 @@ package org.justalk.kotlin.stdlib.compress
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
-import android.os.Looper
 import android.util.Log
 import androidx.annotation.IntRange
 import androidx.exifinterface.media.ExifInterface
@@ -28,13 +27,14 @@ object ImageCompressor {
      * @param outputFile    压缩后的目标文件
      * @param targetWidth   压缩目标宽度（像素） 如果指定，图片将按此宽度进行缩放，同时保持宽高比。为null则不限制
      * @param targetHeight  压缩目标高度（像素） 如果指定，图片将按此高度进行缩放，同时保持宽高比。为null则不限制
-     * @param maxFileSize   压缩后文件大小限制（单位:KB,可选，null表示不限制）
+     * @param maxFileSize   压缩后文件大小限制（单位:B,可选，null表示不限制）
      * @param quality       初始压缩质量 (0-100) 默认80
      * @param outputFormat  输出格式 (JPEG、PNG、WEBP，默认JPEG)
      * @throws IOException 如果处理过程中发生I/O错误
      * @throws RuntimeException 如果位图无法解码或其它处理失败
      */
-    fun compressImage(
+    @JvmStatic
+    fun compress(
         inputFile: File,
         outputFile: File,
         targetWidth: Int? = null,
@@ -119,17 +119,16 @@ object ImageCompressor {
             bitmap.compress(format, initialQuality, outputStream)
             return outputStream.toByteArray()
         }
-        val maxFileSizeBytes = maxFileSize * 1024
         var quality = initialQuality
         bitmap.compress(format, quality, outputStream)
 
-        while (outputStream.size() > maxFileSizeBytes && quality > 10) {
+        while (outputStream.size() > maxFileSize && quality > 10) {
             outputStream.reset() // 重置流
             quality -= 10 // 逐步降低质量
             bitmap.compress(format, quality, outputStream)
         }
-        if (outputStream.size() > maxFileSizeBytes) {
-            throw RuntimeException("Final size${outputStream.size() / 1024} exceeds maxSize. Please reduce target width and height.");
+        if (outputStream.size() > maxFileSize) {
+            throw RuntimeException("Final size${outputStream.size()} exceeds maxSize. Please reduce target width and height.");
         }
         return outputStream.toByteArray()
     }
