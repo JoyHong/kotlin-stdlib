@@ -91,7 +91,7 @@ object ImageCompressor {
                 maxFileSize
             )
             // 将压缩后的数据写入文件
-            val tempFile = createSafeTempFile(outputFormat)
+            val tempFile = createTempImageFile(outputFormat)
             tempFile.outputStream().use { fos ->
                 fos.write(byteArray)
                 fos.flush()
@@ -252,25 +252,17 @@ object ImageCompressor {
     }
 
     /**
-     * 创建一个安全的临时文件，用于存储压缩后的图片数据。
-     *
-     * @param format [Bitmap.CompressFormat] 枚举，表示所需的图片格式（例如，PNG, WEBP, JPEG）
-     * @return 一个 [File] 对象，表示新创建的、唯一的临时文件
-     * @throws RuntimeException 如果无法创建临时目录
+     * 创建临时图片文件
+     * @param format 图片格式(PNG/JPEG/WEBP)
+     * @return 新创建的临时文件
      */
-    private fun createSafeTempFile(format: Bitmap.CompressFormat): File {
-        val extension = when (format) {
-            Bitmap.CompressFormat.PNG -> "png"
-            Bitmap.CompressFormat.WEBP -> "webp"
-            else -> "jpg"
+    private fun createTempImageFile(format: Bitmap.CompressFormat): File {
+        val suffix = when (format) {
+            Bitmap.CompressFormat.PNG -> ".png"
+            Bitmap.CompressFormat.WEBP -> ".webp"
+            else -> ".jpg"
         }
-        val tempDir = File(System.getProperty("java.io.tmpdir"), "image_temp")
-        if (!tempDir.exists()) {
-            if (!tempDir.mkdirs()) {
-                throw RuntimeException("Could not create temporary image directory: ${tempDir.absolutePath}");
-            }
-        }
-        return File(tempDir, "compressed_${UUID.randomUUID()}.$extension")
+        return File.createTempFile("IMG_", suffix)
     }
 
 }
