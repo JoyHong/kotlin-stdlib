@@ -3,6 +3,7 @@ package org.justalk.kotlin.stdlib.compress
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
+import android.os.Build
 import android.util.Log
 import androidx.annotation.IntRange
 import androidx.exifinterface.media.ExifInterface
@@ -12,7 +13,6 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
-import java.util.UUID
 import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
@@ -260,7 +260,17 @@ object ImageCompressor {
         val suffix = when (format) {
             Bitmap.CompressFormat.PNG -> ".png"
             Bitmap.CompressFormat.WEBP -> ".webp"
-            else -> ".jpg"
+            else -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    when (format) {
+                        Bitmap.CompressFormat.WEBP_LOSSY,
+                        Bitmap.CompressFormat.WEBP_LOSSLESS -> ".webp"
+                        else -> ".jpg"
+                    }
+                } else {
+                    ".jpg"
+                }
+            }
         }
         return File.createTempFile("IMG_", suffix)
     }
