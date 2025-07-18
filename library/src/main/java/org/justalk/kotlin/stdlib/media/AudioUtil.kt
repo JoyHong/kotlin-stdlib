@@ -4,6 +4,7 @@ import android.media.MediaCodec
 import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.media.MediaMuxer
+import org.justalk.kotlin.stdlib.Utils.inMainThread
 import java.io.File
 import java.nio.ByteBuffer
 
@@ -18,6 +19,9 @@ object AudioUtil {
      * @param inputFiles A variable number of input audio files to be merged
      */
     fun mergeAudioFiles(outputFile: File, vararg inputFiles: File) {
+        assert(!inMainThread) {
+            "Avoid calling this on the main thread"
+        }
         if (inputFiles.isEmpty()) {
             throw RuntimeException("No input files provided to merge.")
         }
