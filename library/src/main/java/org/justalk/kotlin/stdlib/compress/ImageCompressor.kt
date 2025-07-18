@@ -260,7 +260,17 @@ object ImageCompressor {
         val suffix = when (format) {
             Bitmap.CompressFormat.PNG -> ".png"
             Bitmap.CompressFormat.WEBP -> ".webp"
-            else -> ".jpg"
+            else -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    when (format) {
+                        Bitmap.CompressFormat.WEBP_LOSSY,
+                        Bitmap.CompressFormat.WEBP_LOSSLESS -> ".webp"
+                        else -> ".jpg"
+                    }
+                } else {
+                    ".jpg"
+                }
+            }
         }
         return File.createTempFile("IMG_", suffix)
     }
