@@ -10,7 +10,7 @@ import java.nio.ByteBuffer
 
 object AudioUtil {
 
-    private const val TRIM_START_US = 150_000L
+    private const val TRIM_START_US = 150_000L // 定义修剪开始时间0.15s，单位为微秒 (microseconds)
 
     /**
      * Merges multiple input audio files into a single output audio file
@@ -58,14 +58,11 @@ object AudioUtil {
                 throw RuntimeException("Failed to rename temporary file to ${outputFile.name}")
             }
         } catch (e: Exception) {
-            tempOutputFile.delete()
             throw RuntimeException("Failed to merge audio files: ${e.message}", e)
         } finally {
             muxer?.stop()
             muxer?.release()
-            if (tempOutputFile.exists() && tempOutputFile != outputFile) {
-                tempOutputFile.delete()
-            }
+            tempOutputFile.delete()
         }
     }
 

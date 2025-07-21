@@ -1,4 +1,4 @@
-package org.justalk.kotlin.stdlib.compress
+package org.justalk.kotlin.stdlib.media
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -17,7 +17,7 @@ import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
 
-object ImageCompressor {
+object ImageUtil {
 
     /**
      * 综合压缩（尺寸+质量）
