@@ -47,7 +47,8 @@ dependencies {
     api 'androidx.appcompat:appcompat:1.6.1'
     api 'androidx.emoji:emoji-appcompat:1.1.0'
     api 'androidx.exifinterface:exifinterface:1.4.1'
-    api 'com.googlecode.mp4parser:isoparser:1.1.22'
+    //如果使用视频faststart功能，compileOnly改为api
+    compileOnly 'com.googlecode.mp4parser:isoparser:1.1.22'
     compileOnly 'com.google.android.gms:play-services-location:21.3.0'
     compileOnly 'org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.0'
     compileOnly 'com.google.android.gms:play-services-maps:19.0.0'
