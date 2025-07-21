@@ -6,6 +6,7 @@ import com.googlecode.mp4parser.authoring.container.mp4.MovieCreator
 import org.justalk.kotlin.stdlib.Utils.inMainThread
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
 import java.nio.channels.WritableByteChannel
 
 object VideoUtil {
@@ -16,6 +17,8 @@ object VideoUtil {
      * @param inputFile 输入视频文件
      * @param outputFile 输出视频文件
      * @return 如果操作成功返回 true，否则返回 false
+     * @throws IOException 如果处理过程中发生I/O错误
+     * @throws RuntimeException 如果文件重命名失败
      */
     fun fastStart(inputFile: File, outputFile: File) {
         assert(!inMainThread) {
