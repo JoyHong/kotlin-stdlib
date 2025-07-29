@@ -24,7 +24,7 @@ object VideoUtil {
         assert(!inMainThread) {
             "Avoid calling this on the main thread"
         }
-        val tempFile = File.createTempFile("faststart_", ".mp4", inputFile.parentFile)
+        val tempFile = File.createTempFile("faststart_", ".mp4")
         try {
             // 读取原始 MP4 文件并构建 Movie 对象
             val movie: Movie = MovieCreator.build(inputFile.absolutePath)
