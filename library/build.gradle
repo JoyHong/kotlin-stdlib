@@ -48,7 +48,8 @@ dependencies {
     api 'androidx.emoji:emoji-appcompat:1.1.0'
     api 'androidx.exifinterface:exifinterface:1.4.1'
     //如果使用视频faststart功能，compileOnly改为api
-    compileOnly 'com.googlecode.mp4parser:isoparser:1.1.22'
+    //回退到1.0.6版本,高于此版本会没声音且播放不连续，参考 https://blog.csdn.net/fzkf9225/article/details/143777865
+    compileOnly 'com.googlecode.mp4parser:isoparser:1.0.6'
     compileOnly 'com.google.android.gms:play-services-location:21.3.0'
     compileOnly 'org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.0'
     compileOnly 'com.google.android.gms:play-services-maps:19.0.0'
