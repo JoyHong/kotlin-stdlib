@@ -66,16 +66,8 @@ object ImageUtil {
             processingBmp = srcBmp
             // 修正JPG图片旋转角度
             if (isJPG(inputFile)) {
-                val degree = getRotateDegree(inputFile)
-                if (degree != 0) {
-                    val rotatedBitmap = rotatingImage(processingBmp, degree)
-                    if (rotatedBitmap != processingBmp && !processingBmp.isRecycled) {
-                        processingBmp.recycle()
-                    }
-                    processingBmp = rotatedBitmap
-                }
+                processingBmp = rotateImage(processingBmp, inputFile)
             }
-            processingBmp ?: throw RuntimeException("Bitmap is null after rotation")
 
             val scaledBitmap = scaleBitmap(processingBmp, targetWidth, targetHeight)
             if (scaledBitmap != processingBmp) {
@@ -211,44 +203,41 @@ object ImageUtil {
     }
 
     /**
-     * 获取图片的旋转角度（基于EXIF信息）
+     * 旋转/翻转 Bitmap（基于EXIF信息）
      */
-    private fun getRotateDegree(file: File): Int {
-        return try {
-            FileInputStream(file).use { stream ->
-                ExifInterface(stream).getAttributeInt(
-                    ExifInterface.TAG_ORIENTATION,
-                    ExifInterface.ORIENTATION_NORMAL
-                ).let {
-                    when (it) {
-                        ExifInterface.ORIENTATION_ROTATE_90 -> 90
-                        ExifInterface.ORIENTATION_ROTATE_180 -> 180
-                        ExifInterface.ORIENTATION_ROTATE_270 -> 270
-                        else -> 0
-                    }
-                }
+    private fun rotateImage(bitmap: Bitmap, file: File): Bitmap {
+        try {
+            val exifInterface = ExifInterface(file.absolutePath)
+            val orientation = exifInterface.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
+            val matrix = Matrix()
+            // 如果方向正常或未定义，不需要处理，直接返回原Bitmap
+            if (orientation == ExifInterface.ORIENTATION_NORMAL || orientation == ExifInterface.ORIENTATION_UNDEFINED) {
+                return bitmap
             }
+            when (orientation) {
+                ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> matrix.postScale(-1f, 1f)
+                ExifInterface.ORIENTATION_ROTATE_180 -> matrix.postRotate(180f)
+                ExifInterface.ORIENTATION_FLIP_VERTICAL ->
+                    matrix.postScale(1f, -1f)
+                ExifInterface.ORIENTATION_TRANSPOSE -> {
+                    matrix.postRotate(90f)
+                    matrix.postScale(-1f, 1f)
+                }
+                ExifInterface.ORIENTATION_ROTATE_90 -> matrix.postRotate(90f)
+                ExifInterface.ORIENTATION_TRANSVERSE -> {
+                    matrix.postRotate(270f)
+                    matrix.postScale(-1f, 1f)
+                }
+                ExifInterface.ORIENTATION_ROTATE_270 -> matrix.postRotate(270f)
+            }
+            val rotatedBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+            if (rotatedBitmap != bitmap && !bitmap.isRecycled) {
+                bitmap.recycle()
+            }
+            return rotatedBitmap
         } catch (e: Exception) {
-            Log.e("getRotateDegree", "Failed to get image rotation angle: ${e.message}", e)
-            0
+            return bitmap
         }
-    }
-
-    /**
-     * 旋转Bitmap
-     */
-    private fun rotatingImage(bitmap: Bitmap?, angle: Int): Bitmap? {
-        if (bitmap == null) {
-            return null
-        }
-        val matrix = Matrix()
-        matrix.postRotate(angle.toFloat()) // 设置旋转角度
-        val rotatedBitmap =
-            Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
-        if (rotatedBitmap != bitmap && !bitmap.isRecycled) {
-            bitmap.recycle()
-        }
-        return rotatedBitmap
     }
 
     /**
