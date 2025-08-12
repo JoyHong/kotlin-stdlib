@@ -197,8 +197,7 @@ object ImageUtil {
                 JPEG_SIGNATURE.contentEquals(header) // 检查文件头是否匹配JPEG签名
             }
         } catch (e: Exception) {
-            Log.e("isJPG", "Error checking JPG file header: ${e.message}", e)
-            false
+            throw RuntimeException("Error checking JPG file header: ${e.message}", e)
         }
     }
 
@@ -236,7 +235,7 @@ object ImageUtil {
             }
             return rotatedBitmap
         } catch (e: Exception) {
-            return bitmap
+            throw RuntimeException("Image processing failed due to EXIF error or file issues.", e)
         }
     }
 
