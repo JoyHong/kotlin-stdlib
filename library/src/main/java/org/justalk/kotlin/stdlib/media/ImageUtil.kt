@@ -1,17 +1,17 @@
 package org.justalk.kotlin.stdlib.media
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
+import android.net.Uri
 import android.os.Build
-import android.util.Log
 import androidx.annotation.IntRange
 import androidx.exifinterface.media.ExifInterface
 import org.justalk.kotlin.stdlib.Utils.inMainThread
 
 import java.io.ByteArrayOutputStream
 import java.io.File
-import java.io.FileInputStream
 import java.io.IOException
 import kotlin.math.ceil
 import kotlin.math.max
@@ -23,7 +23,7 @@ object ImageUtil {
      * 综合压缩（尺寸+质量）
      *
      * 参考自 https://github.com/javakam/FileOperator/blob/master/library_compressor/src/main/java/ando/file/compressor/ImageCompressEngine.kt
-     * @param inputFile     原始图片文件
+     * @param inputUri      原始图片文件, content:// 或者 file://
      * @param outputFile    压缩后的目标文件
      * @param targetWidth   压缩目标宽度（像素） 如果指定，图片将按此宽度进行缩放，同时保持宽高比。为null则不限制
      * @param targetHeight  压缩目标高度（像素） 如果指定，图片将按此高度进行缩放，同时保持宽高比。为null则不限制
@@ -35,7 +35,8 @@ object ImageUtil {
      */
     @JvmOverloads
     fun compress(
-        inputFile: File,
+        context: Context,
+        inputUri: Uri,
         outputFile: File,
         targetWidth: Int? = null,
         targetHeight: Int? = null,
@@ -52,21 +53,21 @@ object ImageUtil {
             // 解码并进行初始采样
             val options = BitmapFactory.Options().also { opts ->
                 opts.inJustDecodeBounds = true
-                FileInputStream(inputFile).use { stream ->
+                context.contentResolver.openInputStream(inputUri)?.use { stream ->
                     BitmapFactory.decodeStream(stream, null, opts)
                 }
             }
             options.inSampleSize = computeSize(options) // 计算合适的采样率
             options.inJustDecodeBounds = false
 
-            srcBmp = FileInputStream(inputFile).use {
+            srcBmp = context.contentResolver.openInputStream(inputUri)?.use {
                 BitmapFactory.decodeStream(it, null, options)
-            } ?: throw RuntimeException("Could not decode Bitmap: ${inputFile.absolutePath}")
+            } ?: throw RuntimeException("Could not decode Bitmap: $inputUri")
 
             processingBmp = srcBmp
             // 修正JPG图片旋转角度
-            if (isJPG(inputFile)) {
-                processingBmp = rotateImage(processingBmp, inputFile)
+            if (isJPG(context,inputUri)) {
+                processingBmp = rotateImage(context,processingBmp, inputUri)
             }
 
             val scaledBitmap = scaleBitmap(processingBmp, targetWidth, targetHeight)
@@ -186,16 +187,17 @@ object ImageUtil {
     /**
      * 通过文件头判断是否是JPG/JPEG文件
      */
-    private fun isJPG(file: File): Boolean {
-        if (!file.exists() || !file.canRead()) return false
+    private fun isJPG(context: Context, uri: Uri): Boolean {
         return try {
-            FileInputStream(file).use { fis ->
+            context.contentResolver.openInputStream(uri)?.use { stream ->
                 val header = ByteArray(3)
-                if (fis.read(header) != 3) {  // 读取文件的前3个字节
+                // 读取文件的前3个字节
+                if (stream.read(header) != 3) {
                     return false
                 }
-                JPEG_SIGNATURE.contentEquals(header) // 检查文件头是否匹配JPEG签名
-            }
+                // 检查文件头是否匹配 JPEG 签名
+                JPEG_SIGNATURE.contentEquals(header)
+            } ?: false
         } catch (e: Exception) {
             throw RuntimeException("Error checking JPG file header: ${e.message}", e)
         }
@@ -204,39 +206,41 @@ object ImageUtil {
     /**
      * 旋转/翻转 Bitmap（基于EXIF信息）
      */
-    private fun rotateImage(bitmap: Bitmap, file: File): Bitmap {
+    private fun rotateImage(context: Context, bitmap: Bitmap, fileUri: Uri): Bitmap {
         try {
-            val exifInterface = ExifInterface(file.absolutePath)
-            val orientation = exifInterface.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
-            val matrix = Matrix()
-            // 如果方向正常或未定义，不需要处理，直接返回原Bitmap
-            if (orientation == ExifInterface.ORIENTATION_NORMAL || orientation == ExifInterface.ORIENTATION_UNDEFINED) {
-                return bitmap
-            }
-            when (orientation) {
-                ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> matrix.postScale(-1f, 1f)
-                ExifInterface.ORIENTATION_ROTATE_180 -> matrix.postRotate(180f)
-                ExifInterface.ORIENTATION_FLIP_VERTICAL ->
-                    matrix.postScale(1f, -1f)
-                ExifInterface.ORIENTATION_TRANSPOSE -> {
-                    matrix.postRotate(90f)
-                    matrix.postScale(-1f, 1f)
+            context.contentResolver.openInputStream(fileUri)?.use { stream ->
+                val exifInterface = ExifInterface(stream)
+                val orientation = exifInterface.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
+                val matrix = Matrix()
+                // 如果方向正常或未定义，不需要处理，直接返回原Bitmap
+                if (orientation == ExifInterface.ORIENTATION_NORMAL || orientation == ExifInterface.ORIENTATION_UNDEFINED) {
+                    return bitmap
                 }
-                ExifInterface.ORIENTATION_ROTATE_90 -> matrix.postRotate(90f)
-                ExifInterface.ORIENTATION_TRANSVERSE -> {
-                    matrix.postRotate(270f)
-                    matrix.postScale(-1f, 1f)
+                when (orientation) {
+                    ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> matrix.postScale(-1f, 1f)
+                    ExifInterface.ORIENTATION_ROTATE_180 -> matrix.postRotate(180f)
+                    ExifInterface.ORIENTATION_FLIP_VERTICAL -> matrix.postScale(1f, -1f)
+                    ExifInterface.ORIENTATION_TRANSPOSE -> {
+                        matrix.postRotate(90f)
+                        matrix.postScale(-1f, 1f)
+                    }
+                    ExifInterface.ORIENTATION_ROTATE_90 -> matrix.postRotate(90f)
+                    ExifInterface.ORIENTATION_TRANSVERSE -> {
+                        matrix.postRotate(270f)
+                        matrix.postScale(-1f, 1f)
+                    }
+                    ExifInterface.ORIENTATION_ROTATE_270 -> matrix.postRotate(270f)
                 }
-                ExifInterface.ORIENTATION_ROTATE_270 -> matrix.postRotate(270f)
+                val rotatedBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+                if (rotatedBitmap != bitmap && !bitmap.isRecycled) {
+                    bitmap.recycle()
+                }
+                return rotatedBitmap
             }
-            val rotatedBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
-            if (rotatedBitmap != bitmap && !bitmap.isRecycled) {
-                bitmap.recycle()
-            }
-            return rotatedBitmap
         } catch (e: Exception) {
             throw RuntimeException("Image processing failed due to EXIF error or file issues.", e)
         }
+        return bitmap
     }
 
     /**
