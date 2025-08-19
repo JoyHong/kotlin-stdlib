@@ -257,7 +257,6 @@ object ImageUtil {
                     when (format) {
                         Bitmap.CompressFormat.WEBP_LOSSY,
                         Bitmap.CompressFormat.WEBP_LOSSLESS -> ".webp"
-
                         else -> ".jpg"
                     }
                 } else {
