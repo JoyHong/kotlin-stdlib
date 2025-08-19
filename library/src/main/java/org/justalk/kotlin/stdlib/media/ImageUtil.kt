@@ -185,7 +185,7 @@ object ImageUtil {
     private val JPEG_SIGNATURE = byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 0xFF.toByte())
 
     /**
-     * 通过文件头判断是否是JPG/JPEG文件。
+     * 通过文件头判断是否是JPG/JPEG文件
      */
     private fun isJPG(context: Context, uri: Uri): Boolean {
         return try {
@@ -210,10 +210,7 @@ object ImageUtil {
         try {
             context.contentResolver.openInputStream(fileUri)?.use { stream ->
                 val exifInterface = ExifInterface(stream)
-                val orientation = exifInterface.getAttributeInt(
-                    ExifInterface.TAG_ORIENTATION,
-                    ExifInterface.ORIENTATION_NORMAL
-                )
+                val orientation = exifInterface.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
                 val matrix = Matrix()
                 // 如果方向正常或未定义，不需要处理，直接返回原Bitmap
                 if (orientation == ExifInterface.ORIENTATION_NORMAL || orientation == ExifInterface.ORIENTATION_UNDEFINED) {
@@ -222,24 +219,19 @@ object ImageUtil {
                 when (orientation) {
                     ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> matrix.postScale(-1f, 1f)
                     ExifInterface.ORIENTATION_ROTATE_180 -> matrix.postRotate(180f)
-                    ExifInterface.ORIENTATION_FLIP_VERTICAL ->
-                        matrix.postScale(1f, -1f)
-
+                    ExifInterface.ORIENTATION_FLIP_VERTICAL -> matrix.postScale(1f, -1f)
                     ExifInterface.ORIENTATION_TRANSPOSE -> {
                         matrix.postRotate(90f)
                         matrix.postScale(-1f, 1f)
                     }
-
                     ExifInterface.ORIENTATION_ROTATE_90 -> matrix.postRotate(90f)
                     ExifInterface.ORIENTATION_TRANSVERSE -> {
                         matrix.postRotate(270f)
                         matrix.postScale(-1f, 1f)
                     }
-
                     ExifInterface.ORIENTATION_ROTATE_270 -> matrix.postRotate(270f)
                 }
-                val rotatedBitmap =
-                    Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+                val rotatedBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
                 if (rotatedBitmap != bitmap && !bitmap.isRecycled) {
                     bitmap.recycle()
                 }
