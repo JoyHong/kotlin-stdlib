@@ -1,6 +1,5 @@
 package org.justalk.kotlin.stdlib.io
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.webkit.MimeTypeMap
@@ -48,9 +47,30 @@ fun File.share(context: Context, title: CharSequence) {
         intent.putExtra(Intent.EXTRA_STREAM, contentUri)
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
-    val chooser = Intent.createChooser(shareIntent, title)
-    if (context !is Activity) {
-        chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    val intent = Intent.createChooser(shareIntent, title).also { intent ->
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     }
-    context.startActivity(chooser)
+    context.startActivity(intent)
+}
+
+/**
+ * 使用第三方应用打开此文件(包含文件夹)
+ *
+ * apk 安装包需要申明权限 <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+ */
+fun File.open(context: Context) {
+    assert(exists()) {
+        "File is not exist"
+    }
+    assert(!isDirectory) {
+        "Directory file is not supported"
+    }
+    val authority = "${context.packageName}.fileprovider"
+    val contentUri = FileProvider.getUriForFile(context, authority, this)
+    val intent = Intent(Intent.ACTION_VIEW).also { intent ->
+        intent.setDataAndType(contentUri, mimeType())
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+    context.startActivity(intent)
 }
