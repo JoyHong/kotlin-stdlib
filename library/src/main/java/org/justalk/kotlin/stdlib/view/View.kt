@@ -20,10 +20,11 @@ fun View.applyWindowInsets(
     insetsTop: Boolean = true,
     insetsRight: Boolean = true,
     insetsBottom: Boolean = true,
-    updatePadding: Boolean = true
+    updatePadding: Boolean = true,
+    withImeWindow: Boolean = false
 ) {
     ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets ->
-        val typeInsets = insets.getInsets(sInsetTypes)
+        val typeInsets = insets.getInsets(if (withImeWindow) { sInsetTypes or WindowInsetsCompat.Type.ime() } else sInsetTypes)
         val left = if (insetsLeft) typeInsets.left else 0
         val top = if (insetsTop) typeInsets.top else 0
         val right = if (insetsRight) typeInsets.right else 0
