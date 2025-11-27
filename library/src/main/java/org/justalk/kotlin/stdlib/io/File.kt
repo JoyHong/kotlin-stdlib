@@ -5,6 +5,7 @@ import android.content.Intent
 import android.webkit.MimeTypeMap
 import androidx.core.content.FileProvider
 import java.io.File
+import java.io.IOException
 
 /**
  * 获取文件的 MimeType 信息
@@ -73,4 +74,29 @@ fun File.open(context: Context) {
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     }
     context.startActivity(intent)
+}
+
+/**
+ * 确保当前目录下存在 .nomedia 文件。
+ *
+ * @return true 表示操作成功（文件已存在或创建成功）；
+ * false 表示操作失败（例如当前对象是文件而非目录、创建目录失败、或无写入权限）。
+ */
+fun File.ensureNomedia(): Boolean {
+    if (!exists() && !mkdirs()) {
+        return false
+    }
+    if (!isDirectory) {
+        return false
+    }
+    val nomediaFile = File(this, ".nomedia")
+    if (nomediaFile.exists()) {
+        return true
+    }
+    return try {
+        nomediaFile.createNewFile()
+    } catch (e: IOException) {
+        e.printStackTrace()
+        false
+    }
 }
