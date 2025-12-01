@@ -15,7 +15,7 @@ object Utils {
     /**
      * 是否在主线程
      */
-    val inMainThread: Boolean
+    val isMainThread: Boolean
         get() = Looper.getMainLooper().thread === Thread.currentThread()
 
     /**

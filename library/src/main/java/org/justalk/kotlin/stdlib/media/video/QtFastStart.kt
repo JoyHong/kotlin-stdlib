@@ -2,7 +2,7 @@ package org.justalk.kotlin.stdlib.media.video
 
 import android.util.Log
 import androidx.annotation.WorkerThread
-import org.justalk.kotlin.stdlib.Utils.inMainThread
+import org.justalk.kotlin.stdlib.Utils.isMainThread
 import java.io.Closeable
 import java.io.File
 import java.io.FileInputStream
@@ -37,7 +37,7 @@ object QtFastStart {
         if (isFastStart(inputFile)) {
             throw RuntimeException("InputFile '${inputFile.name}' is already fast start")
         }
-        assert(!inMainThread) {
+        assert(!isMainThread) {
             "Avoid calling this on the main thread"
         }
         var inStream: FileInputStream? = null

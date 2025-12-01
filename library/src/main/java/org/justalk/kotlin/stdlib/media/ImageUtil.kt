@@ -8,7 +8,7 @@ import android.net.Uri
 import android.os.Build
 import androidx.annotation.IntRange
 import androidx.exifinterface.media.ExifInterface
-import org.justalk.kotlin.stdlib.Utils.inMainThread
+import org.justalk.kotlin.stdlib.Utils.isMainThread
 
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -44,7 +44,7 @@ object ImageUtil {
         @IntRange(from = 0, to = 100) quality: Int = 80,
         outputFormat: Bitmap.CompressFormat = Bitmap.CompressFormat.JPEG
     ) {
-        assert(!inMainThread) {
+        assert(!isMainThread) {
             "Avoid calling this on the main thread"
         }
         val srcBmp: Bitmap?  // 初始解码的Bitmap
