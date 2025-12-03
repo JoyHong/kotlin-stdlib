@@ -15,12 +15,14 @@ object Utils {
     /**
      * 是否在主线程
      */
+    @JvmStatic
     val isMainThread: Boolean
         get() = Looper.getMainLooper().thread === Thread.currentThread()
 
     /**
      * 获取当前时区字符串, eg. UTC+8
      */
+    @JvmStatic
     val timeZone: String
         get() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             getTimeZoneOffsetString()

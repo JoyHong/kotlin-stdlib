@@ -26,6 +26,7 @@ object BluetoothUtil {
     /**
      * Checks if bluetooth is enabled
      */
+    @JvmStatic
     fun isEnabled(bluetoothAdapter: BluetoothAdapter): Boolean {
         return bluetoothAdapter.isEnabled
     }
@@ -35,6 +36,7 @@ object BluetoothUtil {
      *
      * If enable success, return RESULT_OK, otherwise RESULT_CANCELED
      */
+    @JvmStatic
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
     fun requestEnableBt(launcher: ActivityResultLauncher<Intent>) {
         launcher.launch(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
@@ -43,6 +45,7 @@ object BluetoothUtil {
     /**
      * Checks if device is bonded
      */
+    @JvmStatic
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
     fun isBonded(bluetoothAdapter: BluetoothAdapter, device: BluetoothDevice): Boolean {
         return bluetoothAdapter.bondedDevices.any { bondedDevice ->
@@ -53,6 +56,7 @@ object BluetoothUtil {
     /**
      * Bond new device
      */
+    @JvmStatic
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
     fun bond(device: BluetoothDevice): Boolean {
         return device.createBond()
@@ -77,6 +81,7 @@ object BluetoothUtil {
      *
      * @return true if call success; otherwise false
      */
+    @JvmStatic
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
     fun connect(bluetoothA2dp: BluetoothA2dp, device: BluetoothDevice): Boolean {
         try {
@@ -95,6 +100,7 @@ object BluetoothUtil {
      *
      * @see BluetoothProfile.STATE_CONNECTED
      */
+    @JvmStatic
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
     fun getConnectionState(bluetoothA2dp: BluetoothA2dp, device: BluetoothDevice): Int {
         return bluetoothA2dp.getConnectionState(device)

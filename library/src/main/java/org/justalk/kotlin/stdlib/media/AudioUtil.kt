@@ -18,6 +18,7 @@ object AudioUtil {
      * @param outputFile The file where the merged audio will be saved
      * @param inputFiles A variable number of input audio files to be merged
      */
+    @JvmStatic
     fun mergeFiles(outputFile: File, vararg inputFiles: File) {
         assert(!isMainThread) {
             "Avoid calling this on the main thread"

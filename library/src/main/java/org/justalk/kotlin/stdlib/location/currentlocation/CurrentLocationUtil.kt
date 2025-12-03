@@ -8,18 +8,16 @@ import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import kotlinx.coroutines.tasks.await
 
-class CurrentLocationUtil {
+object CurrentLocationUtil {
 
-    companion object {
-        @SuppressLint("MissingPermission")
-        suspend fun getCurrentLocation(
-            context: Context,
-            priority: Int = Priority.PRIORITY_HIGH_ACCURACY
-        ): Location? {
-            return LocationServices.getFusedLocationProviderClient(context)
-                .getCurrentLocation(priority, CancellationTokenSource().token)
-                .await()
-        }
+    @SuppressLint("MissingPermission")
+    suspend fun getCurrentLocation(
+        context: Context,
+        priority: Int = Priority.PRIORITY_HIGH_ACCURACY
+    ): Location? {
+        return LocationServices.getFusedLocationProviderClient(context)
+            .getCurrentLocation(priority, CancellationTokenSource().token)
+            .await()
     }
 
 }

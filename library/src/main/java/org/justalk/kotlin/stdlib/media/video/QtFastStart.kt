@@ -8,7 +8,6 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
-import java.lang.RuntimeException
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.channels.FileChannel
@@ -32,6 +31,7 @@ object QtFastStart {
      * @throws IOException 如果处理过程中发生 I/O 错误
      * @throws RuntimeException 如果输入文件已是快速启动格式，文件重命名失败，或快速启动转换失败
      */
+    @JvmStatic
     @WorkerThread
     fun fastStart(inputFile: File, outputFile: File) {
         if (isFastStart(inputFile)) {
@@ -209,6 +209,7 @@ object QtFastStart {
      * @param inputFile 输入视频文件
      * @return 视频文件 fastStart 属性
      */
+    @JvmStatic
     fun isFastStart(inputFile: File): Boolean {
         var inStream: FileInputStream? = null
         try {

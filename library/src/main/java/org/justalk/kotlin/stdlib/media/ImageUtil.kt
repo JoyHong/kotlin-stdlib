@@ -33,6 +33,7 @@ object ImageUtil {
      * @throws IOException 如果处理过程中发生I/O错误
      * @throws RuntimeException 如果位图无法解码或其它处理失败
      */
+    @JvmStatic
     @JvmOverloads
     fun compress(
         context: Context,
