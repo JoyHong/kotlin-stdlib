@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.webkit.MimeTypeMap
 import androidx.core.content.FileProvider
+import androidx.documentfile.provider.DocumentFile
 import java.io.File
 import java.io.IOException
 
@@ -38,8 +39,8 @@ fun File.mimeType(): String {
  * </paths>
  */
 fun File.share(context: Context, title: CharSequence) {
-    assert(exists()) {
-        "File is not exist"
+    if (!exists()) {
+        throw NoSuchFileException(file = this, reason = "The source file doesn't exist.")
     }
     val authority = "${context.packageName}.fileprovider"
     val contentUri = FileProvider.getUriForFile(context, authority, this)
@@ -60,8 +61,8 @@ fun File.share(context: Context, title: CharSequence) {
  * apk 安装包需要申明权限 <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
  */
 fun File.open(context: Context) {
-    assert(exists()) {
-        "File is not exist"
+    if (!exists()) {
+        throw NoSuchFileException(file = this, reason = "The source file doesn't exist.")
     }
     assert(!isDirectory) {
         "Directory file is not supported"
@@ -98,5 +99,42 @@ fun File.ensureNomedia(): Boolean {
     } catch (e: IOException) {
         e.printStackTrace()
         false
+    }
+}
+
+/**
+ * 复制文件
+ */
+fun DocumentFile.copyTo(context: Context, target: File): File? {
+    if (target.exists()) {
+        throw RuntimeException("The destination file already exists.")
+    }
+    target.parentFile?.mkdirs()
+    val tmpFile = File(target.parent, "${target.name}.tmp")
+    if (tmpFile.exists()) {
+        tmpFile.delete()
+    }
+    try {
+        val inputStream = context.contentResolver.openInputStream(uri) ?: return null
+        inputStream.use { input ->
+            tmpFile.outputStream().use { output ->
+                input.copyTo(output)
+            }
+        }
+        val renameSuccess = tmpFile.renameTo(target)
+        if (!renameSuccess) {
+            if (target.exists()) {
+                return target
+            }
+            tmpFile.delete()
+            return null
+        }
+        return target
+    } catch (e: Exception) {
+        if (tmpFile.exists()) {
+            tmpFile.delete()
+        }
+        e.printStackTrace()
+        return null
     }
 }

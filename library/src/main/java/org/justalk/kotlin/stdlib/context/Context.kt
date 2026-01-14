@@ -28,7 +28,3 @@ fun Context.getActivity(): Activity? {
 fun Context.hasHardwareKeyboard(): Boolean {
     return resources.configuration.keyboard == Configuration.KEYBOARD_QWERTY
 }
-
-//fun Context.dp2px(@Dimension(unit = 0) dp: Int): Float {
-//    return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp.toFloat(), resources.displayMetrics)
-//}
