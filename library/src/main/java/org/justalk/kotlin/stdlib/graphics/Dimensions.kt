@@ -10,12 +10,12 @@ import android.util.TypedValue
 val Int.dp: Int
     get() = (this * Resources.getSystem().displayMetrics.density + 0.5f).toInt()
 
-///**
-// * 扩展属性：将 px 转为 dp (Int)
-// * 用法: val dpValue = 100.pxToDp
-// */
-//val Int.pxToDp: Int
-//    get() = (this / Resources.getSystem().displayMetrics.density + 0.5f).toInt()
+/**
+ * 扩展属性：将 px 转为 dp (Int)
+ * 用法: val dpValue = 100.pxToDp
+ */
+val Int.pxToDp: Int
+    get() = (this / Resources.getSystem().displayMetrics.density + 0.5f).toInt()
 
 /**
  * 扩展属性：将 dp 转为 px (Float)
@@ -25,12 +25,12 @@ val Int.dp: Int
 val Float.dp: Float
     get() = this * Resources.getSystem().displayMetrics.density
 
-///**
-// * 扩展属性：将 px 转为 dp (Float)
-// * 用法: val dpValue = 100f.pxToDp
-// */
-//val Float.pxToDp: Float
-//    get() = this / Resources.getSystem().displayMetrics.density
+/**
+ * 扩展属性：将 px 转为 dp (Float)
+ * 用法: val dpValue = 100f.pxToDp
+ */
+val Float.pxToDp: Float
+    get() = this / Resources.getSystem().displayMetrics.density
 
 /**
  * 扩展属性
