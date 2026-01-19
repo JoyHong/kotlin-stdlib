@@ -2,6 +2,7 @@ package org.justalk.kotlin.stdlib.io
 
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.webkit.MimeTypeMap
 import androidx.core.content.FileProvider
 import androidx.documentfile.provider.DocumentFile
@@ -103,9 +104,26 @@ fun File.ensureNomedia(): Boolean {
 }
 
 /**
- * 复制文件
+ * 拷贝文件到指定的 uri
  */
-fun DocumentFile.copyTo(context: Context, target: File): File? {
+@Throws(Throwable::class)
+fun File.copyTo(context: Context, target: Uri): Uri {
+    if (!this.exists()) {
+        throw NoSuchFileException(file = this, reason = "The source file doesn't exist.")
+    }
+    this.inputStream().use { input ->
+        context.contentResolver.openOutputStream(target)!!.use { output ->
+            input.copyTo(output)
+        }
+    }
+    return target
+}
+
+/**
+ * 拷贝文件到指定的 file
+ */
+@Throws(Throwable::class)
+fun DocumentFile.copyTo(context: Context, target: File): File {
     if (target.exists()) {
         throw RuntimeException("The destination file already exists.")
     }
@@ -115,7 +133,7 @@ fun DocumentFile.copyTo(context: Context, target: File): File? {
         tmpFile.delete()
     }
     try {
-        val inputStream = context.contentResolver.openInputStream(uri) ?: return null
+        val inputStream = context.contentResolver.openInputStream(uri)!!
         inputStream.use { input ->
             tmpFile.outputStream().use { output ->
                 input.copyTo(output)
@@ -127,14 +145,13 @@ fun DocumentFile.copyTo(context: Context, target: File): File? {
                 return target
             }
             tmpFile.delete()
-            return null
+            throw RuntimeException("renameTo failure")
         }
         return target
     } catch (e: Exception) {
         if (tmpFile.exists()) {
             tmpFile.delete()
         }
-        e.printStackTrace()
-        return null
+        throw e
     }
 }
