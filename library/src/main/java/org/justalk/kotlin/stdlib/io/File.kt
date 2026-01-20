@@ -157,7 +157,7 @@ fun File.saveToPublicStorage(
     context: Context,
     folderName: String? = null,
     defaultMimeType: String? = null,
-    supportWebp: Boolean = true
+    supportWebp: Boolean = false
 ): Uri? {
     if (!exists()) return null
 
