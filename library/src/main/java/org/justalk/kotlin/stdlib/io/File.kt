@@ -169,6 +169,9 @@ fun File.saveToPublicStorage(
     var finalMimeType = mimeType()
     if (finalMimeType == "*/*" && defaultMimeType.isNullOrEmpty().not()) {
         finalMimeType = defaultMimeType
+        MimeTypeMap.getSingleton().getExtensionFromMimeType(defaultMimeType)?.takeIf { it.isNotEmpty() }?.let { extension ->
+            finalFileName = "${nameWithoutExtension}.$extension"
+        }
     }
 
     val isOriginalWebp = extension.equals("webp", ignoreCase = true) || finalMimeType.contains("webp", ignoreCase = true)
