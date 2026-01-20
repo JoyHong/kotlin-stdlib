@@ -152,6 +152,7 @@ fun File.getUniqueFile(): File {
  * @param supportWebp 是否支持保存为 WebP 格式。默认为 true。如果传 false 且源文件是 WebP，则会自动转码为 JPG 保存。
  * @return 保存成功后的 Uri，失败返回 null
  */
+@JvmOverloads
 fun File.saveToPublicStorage(
     context: Context,
     folderName: String? = null,
