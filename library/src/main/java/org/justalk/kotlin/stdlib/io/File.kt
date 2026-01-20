@@ -228,7 +228,7 @@ fun File.saveToPublicStorage(
             val resolver = context.contentResolver
             val uri = resolver.insert(collection, contentValues) ?: return null
             return try {
-                uri.copyTo(context, sourceFileToSave)
+                sourceFileToSave.copyTo(context, uri)
                 contentValues.clear()
                 contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
                 resolver.update(uri, contentValues, null, null)
