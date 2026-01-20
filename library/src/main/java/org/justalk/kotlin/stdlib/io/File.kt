@@ -103,6 +103,33 @@ fun File.ensureNomedia(): Boolean {
 }
 
 /**
+ * 获取不冲突的文件对象
+ * 如果当前文件已存在, 会自动在文件名后追加序号（如 "name_1.jpg", "name_2.jpg"）, 直到找到一个尚不存在的文件路径。
+ *
+ * @return 一个不存在于文件系统的 File 对象
+ */
+fun File.getUniqueFile(): File {
+    // 如果当前文件本来就不存在, 则直接返回自己
+    if (!exists()) return this
+    val parent = parentFile
+    val originalName = nameWithoutExtension
+    val ext = extension // 自动去掉开头的点, 例如 "jpg"
+    var file = this
+    var counter = 1
+    // 循环检查, 直到找到一个不存在的文件名
+    while (file.exists()) {
+        val newName = if (ext.isNotEmpty()) {
+            "${originalName}_${counter}.$ext"
+        } else {
+            "${originalName}_${counter}"
+        }
+        file = File(parent, newName)
+        counter++
+    }
+    return file
+}
+
+/**
  * 拷贝文件到指定的 uri
  */
 @Throws(Exception::class)
