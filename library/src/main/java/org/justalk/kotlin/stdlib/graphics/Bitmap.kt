@@ -42,9 +42,10 @@ fun Bitmap.toTempFile(
         // 2. 创建临时文件
         // createTempFile 会自动在文件名后生成随机数，保证唯一性
         // 存放目录：context.cacheDir
-        val directory = folderName?.takeIf { it.isNotEmpty() }?.let { File(context.cacheDir, it) }
+        val targetDir = folderName?.takeIf { it.isNotEmpty() }?.let { File(context.cacheDir, it) }
             ?: context.cacheDir
-        val tempFile = File.createTempFile("temp_img_", extension, directory)
+        if (!targetDir.exists()) targetDir.mkdirs()
+        val tempFile = File.createTempFile("temp_img_", extension, targetDir)
         // 3. 注册 JVM 退出时的删除钩子 (满足你的“退出后清理”需求)
         // 注意：如果是 Force Stop 或 Crash，这个可能不会触发，但放在 cacheDir 里是安全的
         tempFile.deleteOnExit()
