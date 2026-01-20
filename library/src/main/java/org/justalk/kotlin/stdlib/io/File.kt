@@ -5,7 +5,6 @@ import android.content.Intent
 import android.net.Uri
 import android.webkit.MimeTypeMap
 import androidx.core.content.FileProvider
-import androidx.documentfile.provider.DocumentFile
 import java.io.File
 import java.io.IOException
 
@@ -57,7 +56,7 @@ fun File.share(context: Context, title: CharSequence) {
 }
 
 /**
- * 使用第三方应用打开此文件(包含文件夹)
+ * 使用第三方应用打开此文件(不支持文件夹)
  *
  * apk 安装包需要申明权限 <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
  */
@@ -106,7 +105,7 @@ fun File.ensureNomedia(): Boolean {
 /**
  * 拷贝文件到指定的 uri
  */
-@Throws(Throwable::class)
+@Throws(Exception::class)
 fun File.copyTo(context: Context, target: Uri): Uri {
     if (!this.exists()) {
         throw NoSuchFileException(file = this, reason = "The source file doesn't exist.")
@@ -122,8 +121,8 @@ fun File.copyTo(context: Context, target: Uri): Uri {
 /**
  * 拷贝文件到指定的 file
  */
-@Throws(Throwable::class)
-fun DocumentFile.copyTo(context: Context, target: File): File {
+@Throws(Exception::class)
+fun Uri.copyTo(context: Context, target: File): File {
     if (target.exists()) {
         throw RuntimeException("The destination file already exists.")
     }
@@ -133,8 +132,7 @@ fun DocumentFile.copyTo(context: Context, target: File): File {
         tmpFile.delete()
     }
     try {
-        val inputStream = context.contentResolver.openInputStream(uri)!!
-        inputStream.use { input ->
+        context.contentResolver.openInputStream(this)!!.use { input ->
             tmpFile.outputStream().use { output ->
                 input.copyTo(output)
             }
