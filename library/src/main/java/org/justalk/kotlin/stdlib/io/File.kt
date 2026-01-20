@@ -148,12 +148,14 @@ fun File.getUniqueFile(): File {
  *
  * @param context 上下文
  * @param folderName 自定义子文件夹名称 (例如 "MyAppImages")
+ * @param defaultMimeType 当无法从文件后缀识别 MimeType 时的默认值 (例如 "image/jpeg")。
  * @param supportWebp 是否支持保存为 WebP 格式。默认为 true。如果传 false 且源文件是 WebP，则会自动转码为 JPG 保存。
  * @return 保存成功后的 Uri，失败返回 null
  */
 fun File.saveToPublicStorage(
     context: Context,
     folderName: String? = null,
+    defaultMimeType: String? = null,
     supportWebp: Boolean = true
 ): Uri? {
     if (!exists()) return null
@@ -164,8 +166,11 @@ fun File.saveToPublicStorage(
     var sourceFileToSave = this
     var finalFileName = name
     var finalMimeType = mimeType()
+    if (finalMimeType == "*/*" && defaultMimeType.isNullOrEmpty().not()) {
+        finalMimeType = defaultMimeType
+    }
 
-    val isOriginalWebp = extension.equals("webp", ignoreCase = true)
+    val isOriginalWebp = extension.equals("webp", ignoreCase = true) || finalMimeType.contains("webp", ignoreCase = true)
     val needConversion = isOriginalWebp && !supportWebp
 
     // 用于记录临时文件，以便最后删除
