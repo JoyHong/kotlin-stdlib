@@ -295,39 +295,3 @@ fun File.copyTo(context: Context, target: Uri): Uri {
     }
     return target
 }
-
-/**
- * 拷贝文件到指定的 file
- */
-@Throws(Exception::class)
-fun Uri.copyTo(context: Context, target: File): File {
-    if (target.exists()) {
-        throw RuntimeException("The destination file already exists.")
-    }
-    target.parentFile?.mkdirs()
-    val tmpFile = File(target.parent, "${target.name}.tmp")
-    if (tmpFile.exists()) {
-        tmpFile.delete()
-    }
-    try {
-        context.contentResolver.openInputStream(this)!!.use { input ->
-            tmpFile.outputStream().use { output ->
-                input.copyTo(output)
-            }
-        }
-        val renameSuccess = tmpFile.renameTo(target)
-        if (!renameSuccess) {
-            if (target.exists()) {
-                return target
-            }
-            tmpFile.delete()
-            throw RuntimeException("renameTo failure")
-        }
-        return target
-    } catch (e: Exception) {
-        if (tmpFile.exists()) {
-            tmpFile.delete()
-        }
-        throw e
-    }
-}
