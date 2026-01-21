@@ -150,7 +150,7 @@ fun File.getUniqueFile(): File {
  * @param folderName 自定义子文件夹名称 (例如 "MyAppImages")
  * @param forceDownloadFolder 是否强制保存到系统的 Download 目录。
  *                            默认为 false (自动归类到 Pictures/Movies 等)。
- *                            如果不为 true，建议配合 openSystemDownloads 能够更大概率实现“打开文件夹”功能。
+ *                            如果不为 true, 则 folderName 就不生效了, 建议配合 openSystemDownloads 能够更大概率实现“打开文件夹”功能。
  * @param defaultMimeType 当无法从文件后缀识别 MimeType 时的默认值 (例如 "image/jpeg")。
  * @param supportWebp 是否支持保存为 WebP 格式。默认为 true。如果传 false 且源文件是 WebP，则会自动转码为 JPG 保存。
  * @return 保存成功后的 Uri，失败返回 null
@@ -228,7 +228,7 @@ fun File.saveToPublicStorage(
                     isVideo -> Environment.DIRECTORY_MOVIES
                     isAudio -> Environment.DIRECTORY_MUSIC
                     else -> Environment.DIRECTORY_DOWNLOADS
-                } + (folderName?.takeIf { it.isNotEmpty() }?.let { "/$it" } ?: "")
+                } + (folderName?.takeIf { !forceDownloadFolder && it.isNotEmpty() }?.let { "/$it" } ?: "")
                 values.put(MediaStore.MediaColumns.RELATIVE_PATH, relativePath)
                 values.put(MediaStore.MediaColumns.IS_PENDING, 1)
             }
@@ -258,7 +258,7 @@ fun File.saveToPublicStorage(
             isAudio -> Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC)
             else -> Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
         }
-        val targetDir = if (folderName != null) File(targetRoot, folderName) else targetRoot
+        val targetDir = if (!forceDownloadFolder && folderName != null) File(targetRoot, folderName) else targetRoot
         if (!targetDir.exists()) targetDir.mkdirs()
         // 使用 finalFileName (如果是转码过的，这里已经是 .jpg 结尾了)
         val initialTargetFile = File(targetDir, finalFileName)
