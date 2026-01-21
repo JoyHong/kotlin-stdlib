@@ -1,5 +1,6 @@
 package org.justalk.kotlin.stdlib.io
 
+import android.content.ActivityNotFoundException
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
@@ -27,6 +28,13 @@ fun File.mimeType(): String {
 /**
  * 分享文件到第三方应用
  *
+ * @param context 上下文
+ * @param title 分享弹窗的标题
+ *
+ * @throws NoSuchFileException 当文件不存在时抛出
+ * @throws IllegalArgumentException 当 FileProvider 配置错误（manifest没配或paths没包含该路径）时抛出
+ * @throws ActivityNotFoundException 当手机上没有 APP 能处理分享请求时抛出
+ *
  * <provider
  *         android:name="androidx.core.content.FileProvider"
  *         android:authorities="${applicationId}.fileprovider"
@@ -46,6 +54,11 @@ fun File.mimeType(): String {
  *     <external-path name="external_root" path="." />
  * </paths>
  */
+@Throws(
+    NoSuchFileException::class,
+    IllegalArgumentException::class,
+    ActivityNotFoundException::class
+)
 fun File.share(context: Context, title: CharSequence) {
     if (!exists()) {
         throw NoSuchFileException(file = this, reason = "The source file doesn't exist.")
@@ -64,10 +77,19 @@ fun File.share(context: Context, title: CharSequence) {
 }
 
 /**
- * 使用第三方应用打开此文件(不支持文件夹)
+ * 使用第三方应用打开此文件(不支持文件夹) apk 安装包需要申明权限 <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
  *
- * apk 安装包需要申明权限 <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+ * @param context 上下文
+ *
+ * @throws NoSuchFileException 当文件不存在时抛出
+ * @throws IllegalArgumentException 当传入的是文件夹，或者 FileProvider 配置错误时抛出
+ * @throws ActivityNotFoundException 当系统找不到能打开该文件类型的 App 时抛出
  */
+@Throws(
+    NoSuchFileException::class,
+    IllegalArgumentException::class,
+    ActivityNotFoundException::class
+)
 fun File.open(context: Context) {
     if (!exists()) {
         throw NoSuchFileException(file = this, reason = "The source file doesn't exist.")
@@ -154,16 +176,22 @@ fun File.getUniqueFile(): File {
  * @param defaultMimeType 当无法从文件后缀识别 MimeType 时的默认值 (例如 "image/jpeg")。
  * @param supportWebp 是否支持保存为 WebP 格式。默认为 true。如果传 false 且源文件是 WebP，则会自动转码为 JPG 保存。
  * @return 保存成功后的 Uri，失败返回 null
+ *
+ * @throws NoSuchFileException 当源文件不存在时抛出
+ * @throws IOException 当文件读写失败（如磁盘已满、无权限、MediaStore插入失败）时抛出
  */
 @JvmOverloads
+@Throws(NoSuchFileException::class, IOException::class)
 fun File.saveToPublicStorage(
     context: Context,
     folderName: String? = null,
     forceDownloadFolder: Boolean = false,
     defaultMimeType: String? = null,
     supportWebp: Boolean = false
-): Uri? {
-    if (!exists()) return null
+): Uri {
+    if (!exists()) {
+        throw NoSuchFileException(file = this, reason = "The source file doesn't exist.")
+    }
 
     // --- 1. 预处理：WebP 转码检查 ---
     // 定义最终要保存的“源文件”和“文件名/MimeType”
@@ -239,16 +267,17 @@ fun File.saveToPublicStorage(
                 else -> MediaStore.Downloads.EXTERNAL_CONTENT_URI
             }
             val resolver = context.contentResolver
-            val uri = resolver.insert(collection, contentValues) ?: return null
+            val uri = resolver.insert(collection, contentValues)
+                ?: throw IOException("Failed to create MediaStore record. Uri is null.")
             return try {
                 sourceFileToSave.copyTo(context, uri)
                 contentValues.clear()
                 contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
                 resolver.update(uri, contentValues, null, null)
                 uri
-            } catch (_: Exception) {
+            } catch (e: Exception) {
                 resolver.delete(uri, null, null)
-                null
+                throw IOException("Failed to write data to MediaStore uri.", e)
             }
         }
         // ================== Android 9- (API < 29) ==================
@@ -259,7 +288,9 @@ fun File.saveToPublicStorage(
             else -> Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
         }
         val targetDir = if (!forceDownloadFolder && folderName != null) File(targetRoot, folderName) else targetRoot
-        if (!targetDir.exists()) targetDir.mkdirs()
+        if (!targetDir.exists() && !targetDir.mkdirs()) {
+            throw IOException("Failed to create directory: ${targetDir.absolutePath}")
+        }
         // 使用 finalFileName (如果是转码过的，这里已经是 .jpg 结尾了)
         val initialTargetFile = File(targetDir, finalFileName)
         // 处理冲突：如果有同名文件，获取 _1, _2 新路径
@@ -274,7 +305,7 @@ fun File.saveToPublicStorage(
             Uri.fromFile(finalTargetFile)
         } catch (e: IOException) {
             e.printStackTrace()
-            null
+            throw e
         }
     } finally {
         // --- 3. 清理 ---
@@ -288,15 +319,24 @@ fun File.saveToPublicStorage(
 }
 
 /**
- * 拷贝文件到指定的 uri
+ * 将当前文件的内容拷贝到目标 Uri (通常是 MediaStore Uri)
+ *
+ * @param context 上下文
+ * @param target 目标文件的 Uri
+ * @return 返回目标 Uri (方便链式调用)
+ *
+ * @throws NoSuchFileException 当源文件不存在时抛出
+ * @throws IOException 当读写过程中发生错误（如：目标 Uri 无法打开、磁盘空间不足、IO中断）时抛出
  */
-@Throws(Exception::class)
+@Throws(NoSuchFileException::class, IOException::class)
 fun File.copyTo(context: Context, target: Uri): Uri {
     if (!this.exists()) {
         throw NoSuchFileException(file = this, reason = "The source file doesn't exist.")
     }
     this.inputStream().use { input ->
-        context.contentResolver.openOutputStream(target)!!.use { output ->
+        val output = context.contentResolver.openOutputStream(target)
+            ?: throw IOException("Failed to open output stream for target Uri: $target")
+        output.use { output ->
             input.copyTo(output)
         }
     }
