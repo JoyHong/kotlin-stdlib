@@ -148,6 +148,9 @@ fun File.getUniqueFile(): File {
  *
  * @param context 上下文
  * @param folderName 自定义子文件夹名称 (例如 "MyAppImages")
+ * @param forceDownloadFolder 是否强制保存到系统的 Download 目录。
+ *                            默认为 false (自动归类到 Pictures/Movies 等)。
+ *                            如果不为 true，建议配合 openSystemDownloads 能够更大概率实现“打开文件夹”功能。
  * @param defaultMimeType 当无法从文件后缀识别 MimeType 时的默认值 (例如 "image/jpeg")。
  * @param supportWebp 是否支持保存为 WebP 格式。默认为 true。如果传 false 且源文件是 WebP，则会自动转码为 JPG 保存。
  * @return 保存成功后的 Uri，失败返回 null
@@ -156,6 +159,7 @@ fun File.getUniqueFile(): File {
 fun File.saveToPublicStorage(
     context: Context,
     folderName: String? = null,
+    forceDownloadFolder: Boolean = false,
     defaultMimeType: String? = null,
     supportWebp: Boolean = false
 ): Uri? {
@@ -209,9 +213,9 @@ fun File.saveToPublicStorage(
     }
 
     // --- 2. 准备路径参数 ---
-    val isImage = finalMimeType.startsWith("image", ignoreCase = true) == true
-    val isVideo = !isImage && finalMimeType.startsWith("video", ignoreCase = true) == true
-    val isAudio = !isImage && !isVideo && finalMimeType.startsWith("audio", ignoreCase = true) == true
+    val isImage = !forceDownloadFolder && finalMimeType.startsWith("image", ignoreCase = true) == true
+    val isVideo = !forceDownloadFolder && !isImage && finalMimeType.startsWith("video", ignoreCase = true) == true
+    val isAudio = !forceDownloadFolder && !isImage && !isVideo && finalMimeType.startsWith("audio", ignoreCase = true) == true
 
     try {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
