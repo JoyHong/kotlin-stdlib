@@ -28,6 +28,7 @@ object AppCoroutineScope {
      * 2. 提供一个初始化方法，供 App 层调用
      * 建议在 Application.onCreate 中调用
      */
+    @JvmStatic
     fun setErrorHandler(handler: (Throwable) -> Unit) {
         if (!errorHandlerRef.compareAndSet(null, handler)) {
             Log.w(TAG, "Warning: Error handler already initialized!")
@@ -57,6 +58,7 @@ object AppCoroutineScope {
      * 2. 纯 Java 代码的后台任务
      * 3. 协程 Dispatcher 的底层实现
      */
+    @JvmStatic
     val serialDbExecutor: ExecutorService by lazy {
         Executors.newSingleThreadExecutor { r ->
             Thread(r, "Serial-DB-Thread")
@@ -90,6 +92,7 @@ object AppCoroutineScope {
     /**
      * 这会取消所有通过 ioScope、serialDbScope 启动的正在运行的任务
      */
+    @JvmStatic
     fun cancelAll() {
         appJob.cancelChildren()
     }
