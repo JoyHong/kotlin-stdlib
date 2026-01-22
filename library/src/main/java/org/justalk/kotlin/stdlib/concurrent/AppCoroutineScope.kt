@@ -65,7 +65,7 @@ object AppCoroutineScope {
      * 3. 协程 Dispatcher 的底层实现
      */
     @JvmStatic
-    val serialDbExecutor: ExecutorService by lazy {
+    val dbExecutor: ExecutorService by lazy {
         Executors.newSingleThreadExecutor { r ->
             Thread(r, "Serial-DB-Thread")
         }
@@ -75,8 +75,8 @@ object AppCoroutineScope {
      * 对应的协程调度器 (Dispatcher)
      * 如果你只是想在协程里切换到这个线程，也可以直接用这个 Dispatcher
      */
-    val serialDbDispatcher: CoroutineDispatcher by lazy {
-        serialDbExecutor.asCoroutineDispatcher()
+    val dbDispatcher: CoroutineDispatcher by lazy {
+        dbExecutor.asCoroutineDispatcher()
     }
 
     /**
@@ -85,15 +85,15 @@ object AppCoroutineScope {
      * 可以用这个由单线程线程池支持的 Scope。
      * 注意: 里面不可以再出现 suspend 函数, 因为它会让出线程, 让下一个立马执行, 做不到串行效果
      */
-    val serialDbScope by lazy {
-        CoroutineScope(serialDbDispatcher + appJob + globalExceptionHandler)
+    val dbScope by lazy {
+        CoroutineScope(dbDispatcher + appJob + globalExceptionHandler)
     }
 
     /**
      * 文件操作专用线程池
      */
     @JvmStatic
-    val serialFileExecutor: ExecutorService by lazy {
+    val fileExecutor: ExecutorService by lazy {
         Executors.newSingleThreadExecutor { r ->
             Thread(r, "Serial-File-Thread")
         }
@@ -103,16 +103,16 @@ object AppCoroutineScope {
      * 对应的协程调度器 (Dispatcher)
      * 如果你只是想在协程里切换到这个线程，也可以直接用这个 Dispatcher
      */
-    val serialFileDispatcher: CoroutineDispatcher by lazy {
-        serialFileExecutor.asCoroutineDispatcher()
+    val fileDispatcher: CoroutineDispatcher by lazy {
+        fileExecutor.asCoroutineDispatcher()
     }
 
     /**
      * 文件操作专用协程 Scope
      * 适用于：解压资源、移动大文件、批量删除日志、写入大段文本
      */
-    val serialFileScope: CoroutineScope by lazy {
-        CoroutineScope(serialFileDispatcher + appJob + globalExceptionHandler)
+    val fileScope: CoroutineScope by lazy {
+        CoroutineScope(fileDispatcher + appJob + globalExceptionHandler)
     }
 
     /**
