@@ -25,7 +25,7 @@ object AppCoroutineScope {
     private val errorHandlerRef = AtomicReference<(Throwable) -> Unit>()
 
     /**
-     * 2. 提供一个初始化方法，供 App 层调用
+     * 提供一个初始化方法，供 App 层调用
      * 建议在 Application.onCreate 中调用
      */
     @JvmStatic
@@ -35,21 +35,27 @@ object AppCoroutineScope {
         }
     }
 
-    // 1. 全局异常处理器：这里可以接入你们的 Bugly/Firebase Crashlytics
+    // 全局异常处理器
     private val globalExceptionHandler = CoroutineExceptionHandler { context, throwable ->
         Log.e(TAG, "Global Background Error: ${throwable.message}", throwable)
         errorHandlerRef.get()?.invoke(throwable)
     }
 
-    // 2. SupervisorJob：保证一个任务崩了，不会把整个 Scope 搞挂，其它模块还能跑
+    // SupervisorJob：保证一个任务崩了，不会把整个 Scope 搞挂，其它模块还能跑
     private val appJob = SupervisorJob()
 
     /**
-     * 3. IO 作用域
+     * IO 作用域
      * 适用于：数据库读写、文件操作、网络请求
      * 特点：线程池调度，并发高
      */
     val ioScope = CoroutineScope(Dispatchers.IO + appJob + globalExceptionHandler)
+
+    /**
+     * 主线程作用域 (慎用，一般建议用 LifecycleScope/ViewModelScope)
+     * 但在某些纯静态工具类需要回调 UI 时可能会用到
+     */
+    val mainScope = CoroutineScope(Dispatchers.Main.immediate + appJob + globalExceptionHandler)
 
     /**
      * 公共的数据库串行线程池 (ExecutorService)
@@ -84,10 +90,30 @@ object AppCoroutineScope {
     }
 
     /**
-     * 5. 主线程作用域 (慎用，一般建议用 LifecycleScope/ViewModelScope)
-     * 但在某些纯静态工具类需要回调 UI 时可能会用到
+     * 文件操作专用线程池
      */
-    val mainScope = CoroutineScope(Dispatchers.Main.immediate + appJob + globalExceptionHandler)
+    @JvmStatic
+    val serialFileExecutor: ExecutorService by lazy {
+        Executors.newSingleThreadExecutor { r ->
+            Thread(r, "Serial-File-Thread")
+        }
+    }
+
+    /**
+     * 对应的协程调度器 (Dispatcher)
+     * 如果你只是想在协程里切换到这个线程，也可以直接用这个 Dispatcher
+     */
+    val serialFileDispatcher: CoroutineDispatcher by lazy {
+        serialFileExecutor.asCoroutineDispatcher()
+    }
+
+    /**
+     * 文件操作专用协程 Scope
+     * 适用于：解压资源、移动大文件、批量删除日志、写入大段文本
+     */
+    val serialFileScope: CoroutineScope by lazy {
+        CoroutineScope(serialFileDispatcher + appJob + globalExceptionHandler)
+    }
 
     /**
      * 这会取消所有通过 ioScope、serialDbScope 启动的正在运行的任务
