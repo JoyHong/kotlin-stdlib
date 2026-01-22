@@ -48,6 +48,7 @@ object AppCoroutineScope {
      * 4. (可选) 串行数据库作用域
      * 适用于：IM 消息写入。如果你担心多线程并发写入导致消息乱序，
      * 可以用这个由单线程线程池支持的 Scope。
+     * 注意: 里面不可以再出现 suspend 函数, 因为它会让出线程, 让下一个立马执行, 做不到串行效果
      */
     val serialDbScope by lazy {
         val singleThreadDispatcher = Executors.newSingleThreadExecutor { r ->
