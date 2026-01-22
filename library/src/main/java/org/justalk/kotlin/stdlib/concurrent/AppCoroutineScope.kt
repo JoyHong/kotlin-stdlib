@@ -1,12 +1,16 @@
 package org.justalk.kotlin.stdlib.concurrent
 
 import android.util.Log
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.cancelChildren
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * 全局协程作用域管理
@@ -18,20 +22,22 @@ object AppCoroutineScope {
 
     // 1. 定义一个变量来持有外部传入的处理逻辑
     // (Throwable) -> Unit 表示接收一个异常，没有返回值
-    private var externalErrorHandler: ((Throwable) -> Unit)? = null
+    private val errorHandlerRef = AtomicReference<(Throwable) -> Unit>()
 
     /**
      * 2. 提供一个初始化方法，供 App 层调用
      * 建议在 Application.onCreate 中调用
      */
     fun setErrorHandler(handler: (Throwable) -> Unit) {
-        externalErrorHandler = handler
+        if (!errorHandlerRef.compareAndSet(null, handler)) {
+            Log.w(TAG, "Warning: Error handler already initialized!")
+        }
     }
 
     // 1. 全局异常处理器：这里可以接入你们的 Bugly/Firebase Crashlytics
     private val globalExceptionHandler = CoroutineExceptionHandler { context, throwable ->
         Log.e(TAG, "Global Background Error: ${throwable.message}", throwable)
-        externalErrorHandler?.invoke(throwable)
+        errorHandlerRef.get()?.invoke(throwable)
     }
 
     // 2. SupervisorJob：保证一个任务崩了，不会把整个 Scope 搞挂，其它模块还能跑
@@ -45,16 +51,34 @@ object AppCoroutineScope {
     val ioScope = CoroutineScope(Dispatchers.IO + appJob + globalExceptionHandler)
 
     /**
+     * 公共的数据库串行线程池 (ExecutorService)
+     * 适用于：
+     * 1. 需要传 Executor 的第三方 SDK
+     * 2. 纯 Java 代码的后台任务
+     * 3. 协程 Dispatcher 的底层实现
+     */
+    val serialDbExecutor: ExecutorService by lazy {
+        Executors.newSingleThreadExecutor { r ->
+            Thread(r, "Serial-DB-Thread")
+        }
+    }
+
+    /**
+     * 对应的协程调度器 (Dispatcher)
+     * 如果你只是想在协程里切换到这个线程，也可以直接用这个 Dispatcher
+     */
+    val serialDbDispatcher: CoroutineDispatcher by lazy {
+        serialDbExecutor.asCoroutineDispatcher()
+    }
+
+    /**
      * 4. (可选) 串行数据库作用域
      * 适用于：IM 消息写入。如果你担心多线程并发写入导致消息乱序，
      * 可以用这个由单线程线程池支持的 Scope。
      * 注意: 里面不可以再出现 suspend 函数, 因为它会让出线程, 让下一个立马执行, 做不到串行效果
      */
     val serialDbScope by lazy {
-        val singleThreadDispatcher = Executors.newSingleThreadExecutor { r ->
-            Thread(r, "Serial-DB-Thread")
-        }.asCoroutineDispatcher()
-        CoroutineScope(singleThreadDispatcher + appJob + globalExceptionHandler)
+        CoroutineScope(serialDbDispatcher + appJob + globalExceptionHandler)
     }
 
     /**
@@ -64,11 +88,10 @@ object AppCoroutineScope {
     val mainScope = CoroutineScope(Dispatchers.Main.immediate + appJob + globalExceptionHandler)
 
     /**
-     * 销毁方法
-     * 仅在 APP 彻底退出或进程被杀前调用，一般情况不需要调用
+     * 这会取消所有通过 ioScope、serialDbScope 启动的正在运行的任务
      */
     fun cancelAll() {
-        appJob.cancel()
+        appJob.cancelChildren()
     }
 
 }
