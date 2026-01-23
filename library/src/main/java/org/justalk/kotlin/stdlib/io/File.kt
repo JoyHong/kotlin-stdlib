@@ -84,23 +84,34 @@ fun File.share(context: Context, title: CharSequence) {
  * @throws NoSuchFileException 当文件不存在时抛出
  * @throws IllegalArgumentException 当传入的是文件夹，或者 FileProvider 配置错误时抛出
  * @throws ActivityNotFoundException 当系统找不到能打开该文件类型的 App 时抛出
+ * @throws SecurityException 当文件是 APK 且 App 没有“安装未知应用”权限时抛出 (Android 8.0+)
  */
 @Throws(
     NoSuchFileException::class,
     IllegalArgumentException::class,
-    ActivityNotFoundException::class
+    ActivityNotFoundException::class,
+    SecurityException::class
 )
 fun File.open(context: Context) {
     if (!exists()) {
         throw NoSuchFileException(file = this, reason = "The source file doesn't exist.")
     }
-    assert(!isDirectory) {
-        "Directory file is not supported"
+    if (isDirectory) {
+        throw IllegalArgumentException("Directory file is not supported.")
+    }
+    val mimeType = mimeType()
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        if (mimeType == "application/vnd.android.package-archive") {
+            // 检查是否有安装权限
+            if (!context.packageManager.canRequestPackageInstalls()) {
+                throw SecurityException("Permission REQUEST_INSTALL_PACKAGES not granted.")
+            }
+        }
     }
     val authority = "${context.packageName}.fileprovider"
     val contentUri = FileProvider.getUriForFile(context, authority, this)
     val intent = Intent(Intent.ACTION_VIEW).also { intent ->
-        intent.setDataAndType(contentUri, mimeType())
+        intent.setDataAndType(contentUri, mimeType)
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     }
@@ -206,7 +217,7 @@ fun File.saveToPublicStorage(
         }
     }
 
-    val isOriginalWebp = extension.equals("webp", ignoreCase = true) || finalMimeType.contains("webp", ignoreCase = true)
+    val isOriginalWebp = extension.equals("webp", ignoreCase = true) || finalMimeType.contains("webp")
     val needConversion = isOriginalWebp && !supportWebp
 
     // 用于记录临时文件，以便最后删除
@@ -241,9 +252,9 @@ fun File.saveToPublicStorage(
     }
 
     // --- 2. 准备路径参数 ---
-    val isImage = !forceDownloadFolder && finalMimeType.startsWith("image", ignoreCase = true) == true
-    val isVideo = !forceDownloadFolder && !isImage && finalMimeType.startsWith("video", ignoreCase = true) == true
-    val isAudio = !forceDownloadFolder && !isImage && !isVideo && finalMimeType.startsWith("audio", ignoreCase = true) == true
+    val isImage = !forceDownloadFolder && finalMimeType.startsWith("image") == true
+    val isVideo = !forceDownloadFolder && !isImage && finalMimeType.startsWith("video") == true
+    val isAudio = !forceDownloadFolder && !isImage && !isVideo && finalMimeType.startsWith("audio") == true
 
     try {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
