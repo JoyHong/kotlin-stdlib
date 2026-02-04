@@ -353,3 +353,15 @@ fun File.copyTo(context: Context, target: Uri): Uri {
     }
     return target
 }
+
+/**
+ * 根据路径返回有效的后缀
+ */
+fun String.extension(): String {
+    // 1. 去掉查询参数（如 ..mp4?token=123）
+    val path = this.substringBefore('?')
+    // 2. 获取最后一个点之后的内容
+    val ext = path.substringAfterLast('.', "")
+    // 3. 规避路径中有点但文件名没点的情况（如 /folder.name/file）
+    return if (ext.contains('/')) "" else ext
+}
