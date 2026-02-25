@@ -13,6 +13,8 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.webkit.MimeTypeMap
 import androidx.core.content.FileProvider
+import androidx.core.net.toUri
+import org.justalk.kotlin.stdlib.net.copyTo
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -120,6 +122,8 @@ fun File.open(context: Context) {
 
 /**
  * 确保当前目录下存在 .nomedia 文件。
+ *
+ * Android 的 MediaScanner 只扫描外部存储（如 getExternalFilesDir()、/sdcard/ 等路径）。
  *
  * @return true 表示操作成功（文件已存在或创建成功）；
  * false 表示操作失败（例如当前对象是文件而非目录、创建目录失败、或无写入权限）。
@@ -352,6 +356,14 @@ fun File.copyTo(context: Context, target: Uri): Uri {
         }
     }
     return target
+}
+
+@Throws(NoSuchFileException::class, Exception::class)
+fun File.copyTo(context: Context, target: File): File {
+    if (!this.exists()) {
+        throw NoSuchFileException(file = this, reason = "The source file doesn't exist.")
+    }
+    return toUri().copyTo(context, target)
 }
 
 /**

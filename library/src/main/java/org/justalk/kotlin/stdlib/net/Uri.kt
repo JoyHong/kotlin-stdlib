@@ -29,9 +29,6 @@ fun Uri.isGif(context: Context): Boolean {
  */
 @Throws(Exception::class)
 fun Uri.copyTo(context: Context, target: File): File {
-    if (target.exists()) {
-        throw FileAlreadyExistsException(file = target, reason = "The destination file already exists.")
-    }
     target.parentFile?.mkdirs()
     val tmpFile = File(target.parent, "${target.name}.tmp")
     if (tmpFile.exists()) {
