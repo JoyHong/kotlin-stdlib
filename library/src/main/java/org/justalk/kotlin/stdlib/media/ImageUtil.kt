@@ -7,9 +7,10 @@ import android.graphics.Matrix
 import android.net.Uri
 import android.os.Build
 import androidx.annotation.IntRange
+import androidx.core.graphics.scale
 import androidx.exifinterface.media.ExifInterface
 import org.justalk.kotlin.stdlib.Utils.isMainThread
-
+import org.justalk.kotlin.stdlib.context.ContextUtils
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
@@ -36,14 +37,14 @@ object ImageUtil {
     @JvmStatic
     @JvmOverloads
     fun compress(
-        context: Context,
         inputUri: Uri,
         outputFile: File,
         targetWidth: Int? = null,
         targetHeight: Int? = null,
         maxFileSize: Int? = null,
         @IntRange(from = 0, to = 100) quality: Int = 80,
-        outputFormat: Bitmap.CompressFormat = Bitmap.CompressFormat.JPEG
+        outputFormat: Bitmap.CompressFormat = Bitmap.CompressFormat.JPEG,
+        context: Context = ContextUtils.getApplication()
     ) {
         assert(!isMainThread) {
             "Avoid calling this on the main thread"
@@ -150,7 +151,7 @@ object ImageUtil {
         val newHeight = (currentHeight * ratio).toInt()
 
         return if (newWidth > 0 && newHeight > 0) {
-            Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
+            bitmap.scale(newWidth, newHeight)
         } else {
             bitmap
         }

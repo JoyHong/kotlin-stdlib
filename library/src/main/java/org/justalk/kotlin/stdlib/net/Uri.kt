@@ -5,13 +5,15 @@ import android.content.Context
 import android.net.Uri
 import androidx.core.net.toFile
 import androidx.documentfile.provider.DocumentFile
+import org.justalk.kotlin.stdlib.context.ContextUtils
 import java.io.File
 import java.util.Locale
 
 /**
  * 判断是否是 Gif 格式
  */
-fun Uri.isGif(context: Context): Boolean {
+@JvmOverloads
+fun Uri.isGif(context: Context = ContextUtils.getApplication()): Boolean {
     val documentFile = if (scheme == ContentResolver.SCHEME_CONTENT) {
         DocumentFile.fromSingleUri(context, this)
     } else if (scheme == ContentResolver.SCHEME_FILE) {
@@ -27,8 +29,9 @@ fun Uri.isGif(context: Context): Boolean {
 /**
  * 拷贝文件到指定的 file
  */
+@JvmOverloads
 @Throws(Exception::class)
-fun Uri.copyTo(context: Context, target: File): File {
+fun Uri.copyTo(target: File, context: Context = ContextUtils.getApplication()): File {
     target.parentFile?.mkdirs()
     val tmpFile = File(target.parent, "${target.name}.tmp")
     if (tmpFile.exists()) {

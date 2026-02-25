@@ -1,7 +1,6 @@
 package org.justalk.kotlin.stdlib.graphics
 
 import android.annotation.SuppressLint
-import android.content.Context
 import android.graphics.Bitmap
 import org.justalk.kotlin.stdlib.context.ContextUtils
 import java.io.File

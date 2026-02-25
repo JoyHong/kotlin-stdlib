@@ -14,6 +14,7 @@ import android.provider.MediaStore
 import android.webkit.MimeTypeMap
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
+import org.justalk.kotlin.stdlib.context.ContextUtils
 import org.justalk.kotlin.stdlib.net.copyTo
 import java.io.File
 import java.io.FileOutputStream
@@ -198,11 +199,11 @@ fun File.getUniqueFile(): File {
 @JvmOverloads
 @Throws(NoSuchFileException::class, IOException::class)
 fun File.saveToPublicStorage(
-    context: Context,
     folderName: String? = null,
     forceDownloadFolder: Boolean = false,
     defaultMimeType: String? = null,
-    supportWebp: Boolean = false
+    supportWebp: Boolean = false,
+    context: Context = ContextUtils.getApplication()
 ): Uri {
     if (!exists()) {
         throw NoSuchFileException(file = this, reason = "The source file doesn't exist.")
@@ -285,7 +286,7 @@ fun File.saveToPublicStorage(
             val uri = resolver.insert(collection, contentValues)
                 ?: throw IOException("Failed to create MediaStore record. Uri is null.")
             return try {
-                sourceFileToSave.copyTo(context, uri)
+                sourceFileToSave.copyTo(uri, context)
                 contentValues.clear()
                 contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
                 resolver.update(uri, contentValues, null, null)
@@ -343,8 +344,9 @@ fun File.saveToPublicStorage(
  * @throws NoSuchFileException 当源文件不存在时抛出
  * @throws IOException 当读写过程中发生错误（如：目标 Uri 无法打开、磁盘空间不足、IO中断）时抛出
  */
+@JvmOverloads
 @Throws(NoSuchFileException::class, IOException::class)
-fun File.copyTo(context: Context, target: Uri): Uri {
+fun File.copyTo(target: Uri, context: Context = ContextUtils.getApplication()): Uri {
     if (!this.exists()) {
         throw NoSuchFileException(file = this, reason = "The source file doesn't exist.")
     }
@@ -358,12 +360,13 @@ fun File.copyTo(context: Context, target: Uri): Uri {
     return target
 }
 
+@JvmOverloads
 @Throws(NoSuchFileException::class, Exception::class)
-fun File.copyTo(context: Context, target: File): File {
+fun File.copyTo(target: File, context: Context = ContextUtils.getApplication()): File {
     if (!this.exists()) {
         throw NoSuchFileException(file = this, reason = "The source file doesn't exist.")
     }
-    return toUri().copyTo(context, target)
+    return toUri().copyTo(target, context)
 }
 
 /**
