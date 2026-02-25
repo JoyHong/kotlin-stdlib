@@ -3,6 +3,7 @@ package org.justalk.kotlin.stdlib.graphics
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
+import org.justalk.kotlin.stdlib.context.ContextUtils
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -17,7 +18,6 @@ import java.io.IOException
  * - 即使 deleteOnExit 失效（如进程被杀），系统也会在存储空间不足时优先清理 cacheDir。
  * - 也可以在 App 下次启动时手动清理缓存目录。
  *
- * @param context 上下文
  * @param format 图片格式，默认 JPEG
  * @param quality 压缩质量 (0-100)，默认 100
  * @return 生成的临时文件 File 对象，如果失败返回 null
@@ -25,7 +25,6 @@ import java.io.IOException
 @SuppressLint("NewApi")
 @JvmOverloads
 fun Bitmap.toTempFile(
-    context: Context,
     folderName: String? = null,
     format: Bitmap.CompressFormat = Bitmap.CompressFormat.JPEG,
     quality: Int = 100
@@ -42,8 +41,8 @@ fun Bitmap.toTempFile(
         // 2. 创建临时文件
         // createTempFile 会自动在文件名后生成随机数，保证唯一性
         // 存放目录：context.cacheDir
-        val targetDir = folderName?.takeIf { it.isNotEmpty() }?.let { File(context.cacheDir, it) }
-            ?: context.cacheDir
+        val cacheDir = ContextUtils.getApplication().cacheDir
+        val targetDir = folderName?.takeIf { it.isNotEmpty() }?.let { File(cacheDir, it) } ?: cacheDir
         if (!targetDir.exists()) targetDir.mkdirs()
         val tempFile = File.createTempFile("temp_img_", extension, targetDir)
         // 3. 注册 JVM 退出时的删除钩子 (满足你的“退出后清理”需求)
