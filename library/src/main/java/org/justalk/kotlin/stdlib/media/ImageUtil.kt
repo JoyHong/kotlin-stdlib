@@ -24,7 +24,7 @@ object ImageUtil {
      *
      * 参考自 https://github.com/javakam/FileOperator/blob/master/library_compressor/src/main/java/ando/file/compressor/ImageCompressEngine.kt
      * @param inputUri      原始图片文件, content:// 或者 file://
-     * @param outputFile    压缩后的目标文件
+     * @param outputFile    压缩后的目标文件, 方法内部会自动检查 parentFile 是否已创建
      * @param targetWidth   压缩目标宽度（像素） 如果指定，图片将按此宽度进行缩放，同时保持宽高比。为null则不限制
      * @param targetHeight  压缩目标高度（像素） 如果指定，图片将按此高度进行缩放，同时保持宽高比。为null则不限制
      * @param maxFileSize   压缩后文件大小限制（单位:B,可选，null表示不限制）
@@ -89,6 +89,7 @@ object ImageUtil {
                 fos.write(byteArray)
                 fos.flush()
             }
+            outputFile.parentFile?.mkdirs()
             if (!tempFile.renameTo(outputFile)) { // 将临时文件重命名为目标文件
                 throw RuntimeException("Failed to rename temp file")
             }
