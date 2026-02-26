@@ -1,6 +1,5 @@
 package org.justalk.kotlin.stdlib.media
 
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
@@ -43,8 +42,7 @@ object ImageUtil {
         targetHeight: Int? = null,
         maxFileSize: Int? = null,
         @IntRange(from = 0, to = 100) quality: Int = 80,
-        outputFormat: Bitmap.CompressFormat = Bitmap.CompressFormat.JPEG,
-        context: Context = ContextUtils.getApplication()
+        outputFormat: Bitmap.CompressFormat = Bitmap.CompressFormat.JPEG
     ) {
         assert(!isMainThread) {
             "Avoid calling this on the main thread"
@@ -55,21 +53,21 @@ object ImageUtil {
             // 解码并进行初始采样
             val options = BitmapFactory.Options().also { opts ->
                 opts.inJustDecodeBounds = true
-                context.contentResolver.openInputStream(inputUri)?.use { stream ->
+                ContextUtils.getApplication().contentResolver.openInputStream(inputUri)?.use { stream ->
                     BitmapFactory.decodeStream(stream, null, opts)
                 }
             }
             options.inSampleSize = computeSize(options) // 计算合适的采样率
             options.inJustDecodeBounds = false
 
-            srcBmp = context.contentResolver.openInputStream(inputUri)?.use {
+            srcBmp = ContextUtils.getApplication().contentResolver.openInputStream(inputUri)?.use {
                 BitmapFactory.decodeStream(it, null, options)
             } ?: throw RuntimeException("Could not decode Bitmap: $inputUri")
 
             processingBmp = srcBmp
             // 修正JPG图片旋转角度
-            if (isJPG(context,inputUri)) {
-                processingBmp = rotateImage(context,processingBmp, inputUri)
+            if (isJPG(inputUri)) {
+                processingBmp = rotateImage(processingBmp, inputUri)
             }
 
             val scaledBitmap = scaleBitmap(processingBmp, targetWidth, targetHeight)
@@ -189,9 +187,9 @@ object ImageUtil {
     /**
      * 通过文件头判断是否是JPG/JPEG文件
      */
-    private fun isJPG(context: Context, uri: Uri): Boolean {
+    private fun isJPG(uri: Uri): Boolean {
         return try {
-            context.contentResolver.openInputStream(uri)?.use { stream ->
+            ContextUtils.getApplication().contentResolver.openInputStream(uri)?.use { stream ->
                 val header = ByteArray(3)
                 // 读取文件的前3个字节
                 if (stream.read(header) != 3) {
@@ -199,7 +197,7 @@ object ImageUtil {
                 }
                 // 检查文件头是否匹配 JPEG 签名
                 JPEG_SIGNATURE.contentEquals(header)
-            } ?: false
+            } == true
         } catch (e: Exception) {
             throw RuntimeException("Error checking JPG file header: ${e.message}", e)
         }
@@ -208,9 +206,9 @@ object ImageUtil {
     /**
      * 旋转/翻转 Bitmap（基于EXIF信息）
      */
-    private fun rotateImage(context: Context, bitmap: Bitmap, fileUri: Uri): Bitmap {
+    private fun rotateImage(bitmap: Bitmap, fileUri: Uri): Bitmap {
         try {
-            context.contentResolver.openInputStream(fileUri)?.use { stream ->
+            ContextUtils.getApplication().contentResolver.openInputStream(fileUri)?.use { stream ->
                 val exifInterface = ExifInterface(stream)
                 val orientation = exifInterface.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
                 val matrix = Matrix()

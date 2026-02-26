@@ -41,7 +41,7 @@ object AudioUtil {
 
             inputFiles.forEachIndexed { index, inputFile ->
                 val effectiveDuration = processFile(
-                    muxer = muxer!!,
+                    muxer = muxer,
                     inputFile = inputFile,
                     buffer = buffer,
                     bufferInfo = bufferInfo,

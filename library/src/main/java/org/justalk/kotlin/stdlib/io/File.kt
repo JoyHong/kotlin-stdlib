@@ -184,7 +184,6 @@ fun File.getUniqueFile(): File {
  * 3. 自动处理文件名冲突（API 29+ 系统处理，API < 29 代码处理）。
  * 4. 支持 WebP 转 JPG。
  *
- * @param context 上下文
  * @param folderName 自定义子文件夹名称 (例如 "MyAppImages")
  * @param forceDownloadFolder 是否强制保存到系统的 Download 目录。
  *                            默认为 false (自动归类到 Pictures/Movies 等)。
@@ -202,8 +201,7 @@ fun File.saveToPublicStorage(
     folderName: String? = null,
     forceDownloadFolder: Boolean = false,
     defaultMimeType: String? = null,
-    supportWebp: Boolean = false,
-    context: Context = ContextUtils.getApplication()
+    supportWebp: Boolean = false
 ): Uri {
     if (!exists()) {
         throw NoSuchFileException(file = this, reason = "The source file doesn't exist.")
@@ -232,7 +230,7 @@ fun File.saveToPublicStorage(
         try {
             // 在缓存目录创建一个临时的 .jpg 文件
             val newName = "${nameWithoutExtension}.jpg"
-            val tempFile = File(context.cacheDir, newName)
+            val tempFile = File(ContextUtils.getApplication().cacheDir, newName)
             // 执行转码：WebP File -> Bitmap -> JPG File
             val bitmap = BitmapFactory.decodeFile(absolutePath)
             if (bitmap != null) {
@@ -282,11 +280,11 @@ fun File.saveToPublicStorage(
                 isAudio -> MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
                 else -> MediaStore.Downloads.EXTERNAL_CONTENT_URI
             }
-            val resolver = context.contentResolver
+            val resolver = ContextUtils.getApplication().contentResolver
             val uri = resolver.insert(collection, contentValues)
                 ?: throw IOException("Failed to create MediaStore record. Uri is null.")
             return try {
-                sourceFileToSave.copyTo(uri, context)
+                sourceFileToSave.copyTo(uri)
                 contentValues.clear()
                 contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
                 resolver.update(uri, contentValues, null, null)
@@ -314,7 +312,7 @@ fun File.saveToPublicStorage(
         return try {
             sourceFileToSave.copyTo(finalTargetFile, overwrite = true)
             MediaScannerConnection.scanFile(
-                context,
+                ContextUtils.getApplication(),
                 arrayOf(finalTargetFile.absolutePath),
                 arrayOf(finalMimeType)
             ) { _, uri -> }
@@ -337,21 +335,19 @@ fun File.saveToPublicStorage(
 /**
  * 将当前文件的内容拷贝到目标 Uri (通常是 MediaStore Uri)
  *
- * @param context 上下文
  * @param target 目标文件的 Uri
  * @return 返回目标 Uri (方便链式调用)
  *
  * @throws NoSuchFileException 当源文件不存在时抛出
  * @throws IOException 当读写过程中发生错误（如：目标 Uri 无法打开、磁盘空间不足、IO中断）时抛出
  */
-@JvmOverloads
 @Throws(NoSuchFileException::class, IOException::class)
-fun File.copyTo(target: Uri, context: Context = ContextUtils.getApplication()): Uri {
+fun File.copyTo(target: Uri): Uri {
     if (!this.exists()) {
         throw NoSuchFileException(file = this, reason = "The source file doesn't exist.")
     }
     this.inputStream().use { input ->
-        val output = context.contentResolver.openOutputStream(target)
+        val output = ContextUtils.getApplication().contentResolver.openOutputStream(target)
             ?: throw IOException("Failed to open output stream for target Uri: $target")
         output.use { output ->
             input.copyTo(output)
@@ -360,13 +356,12 @@ fun File.copyTo(target: Uri, context: Context = ContextUtils.getApplication()): 
     return target
 }
 
-@JvmOverloads
 @Throws(NoSuchFileException::class, Exception::class)
-fun File.copyTo(target: File, context: Context = ContextUtils.getApplication()): File {
+fun File.copyTo(target: File): File {
     if (!this.exists()) {
         throw NoSuchFileException(file = this, reason = "The source file doesn't exist.")
     }
-    return toUri().copyTo(target, context)
+    return toUri().copyTo(target)
 }
 
 /**
