@@ -10,6 +10,7 @@ import androidx.core.graphics.scale
 import androidx.exifinterface.media.ExifInterface
 import org.justalk.kotlin.stdlib.Utils.isMainThread
 import org.justalk.kotlin.stdlib.context.ContextUtils
+import org.justalk.kotlin.stdlib.io.moveTo
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
@@ -90,9 +91,8 @@ object ImageUtil {
                 fos.flush()
             }
             outputFile.parentFile?.mkdirs()
-            if (!tempFile.renameTo(outputFile)) { // 将临时文件重命名为目标文件
-                throw RuntimeException("Failed to rename temp file")
-            }
+            // 将临时文件重命名为目标文件
+            tempFile.moveTo(outputFile) ?: throw RuntimeException("Failed to rename temp file")
         } finally {
             processingBmp?.recycle()
         }

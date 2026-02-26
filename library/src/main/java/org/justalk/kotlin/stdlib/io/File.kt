@@ -356,12 +356,41 @@ fun File.copyTo(target: Uri): Uri {
     return target
 }
 
+/**
+ * 将当前文件的内容拷贝到目标 File
+ *
+ * 内部通过 [Uri.copyTo] 实现, 会先创建临时文件再重命名, 保证写入的原子性。
+ *
+ * @param target 目标文件
+ * @return 返回目标 File (方便链式调用)
+ *
+ * @throws NoSuchFileException 当源文件不存在时抛出
+ * @throws Exception 当读写过程中发生错误时抛出
+ */
 @Throws(NoSuchFileException::class, Exception::class)
 fun File.copyTo(target: File): File {
     if (!this.exists()) {
         throw NoSuchFileException(file = this, reason = "The source file doesn't exist.")
     }
     return toUri().copyTo(target)
+}
+
+/**
+ * 将当前文件移动到目标路径
+ *
+ * 内部使用 [File.renameTo] 实现, 如果目标目录不存在会自动创建。
+ * 注意: renameTo 在跨文件系统/跨挂载点时可能失败, 此时返回 null。
+ *
+ * @param target 目标文件
+ * @return 移动成功返回目标 File, 失败返回 null
+ */
+fun File.moveTo(target: File): File? {
+    target.parentFile?.takeIf { !it.exists() }?.mkdirs()
+    return if (renameTo(target)) {
+        target
+    } else {
+        null
+    }
 }
 
 /**
