@@ -11,14 +11,47 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
+import android.util.Size
 import android.webkit.MimeTypeMap
+import android.widget.ImageView
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import org.justalk.kotlin.stdlib.context.ContextUtils
 import org.justalk.kotlin.stdlib.net.copyTo
+import org.justalk.kotlin.stdlib.net.getImageSize
+import org.justalk.kotlin.stdlib.net.toBitmap
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+
+/**
+ * 获取图片文件的尺寸（已根据 EXIF 方向信息修正宽高）。
+ *
+ * 不会解码完整 Bitmap，仅读取图片头信息和 EXIF，非常轻量。
+ *
+ * @return 修正方向后的图片尺寸 [Size]（width, height）
+ * @throws RuntimeException 如果无法读取图片尺寸
+ * @see [Uri.getImageSize]
+ */
+fun File.getImageSize(): Size = Uri.fromFile(this).getImageSize()
+
+/**
+ * 将图片文件解码为方向修正后的 Bitmap，并根据指定的 [scaleType] 缩放到目标尺寸。
+ *
+ * @param width     目标宽度（像素），默认 [Int.MAX_VALUE] 表示不限制
+ * @param height    目标高度（像素），默认 [Int.MAX_VALUE] 表示不限制
+ * @param scaleType 缩放模式，默认 [ImageView.ScaleType.CENTER_INSIDE]
+ * @return 方向修正且按 scaleType 缩放后的 Bitmap
+ * @throws RuntimeException 如果无法解码图片
+ * @see [Uri.toBitmap]
+ */
+@JvmOverloads
+fun File.toBitmap(
+    width: Int = Int.MAX_VALUE,
+    height: Int = Int.MAX_VALUE,
+    scaleType: ImageView.ScaleType = ImageView.ScaleType.CENTER_INSIDE
+): Bitmap = Uri.fromFile(this).toBitmap(width, height, scaleType)
+
 
 /**
  * 获取文件的 MimeType 信息
