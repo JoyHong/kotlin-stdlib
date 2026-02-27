@@ -188,7 +188,7 @@ object ImageUtil {
     /**
      * 通过文件头判断是否是JPG/JPEG文件
      */
-    private fun isJPG(uri: Uri): Boolean {
+    internal fun isJPG(uri: Uri): Boolean {
         return try {
             ContextUtils.getApplication().contentResolver.openInputStream(uri)?.use { stream ->
                 val header = ByteArray(3)
@@ -207,7 +207,7 @@ object ImageUtil {
     /**
      * 旋转/翻转 Bitmap（基于EXIF信息）
      */
-    private fun rotateImage(bitmap: Bitmap, fileUri: Uri): Bitmap {
+    internal fun rotateImage(bitmap: Bitmap, fileUri: Uri): Bitmap {
         try {
             ContextUtils.getApplication().contentResolver.openInputStream(fileUri)?.use { stream ->
                 val exifInterface = ExifInterface(stream)
