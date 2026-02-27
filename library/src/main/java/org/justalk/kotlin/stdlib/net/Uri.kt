@@ -4,10 +4,12 @@ import android.content.ContentResolver
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.util.Size
 import android.widget.ImageView
 import androidx.core.graphics.scale
 import androidx.core.net.toFile
 import androidx.documentfile.provider.DocumentFile
+import androidx.exifinterface.media.ExifInterface
 import org.justalk.kotlin.stdlib.context.ContextUtils
 import org.justalk.kotlin.stdlib.media.ImageUtil
 import java.io.File
@@ -15,6 +17,48 @@ import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
+
+/**
+ * 获取 Uri 对应图片的尺寸（已根据 EXIF 方向信息修正宽高）。
+ *
+ * 不会解码完整 Bitmap，仅读取图片头信息和 EXIF，非常轻量。
+ *
+ * @return 修正方向后的图片尺寸 [Size]（width, height）
+ * @throws RuntimeException 如果无法读取图片尺寸
+ */
+fun Uri.getImageSize(): Size {
+    val resolver = ContextUtils.getApplication().contentResolver
+
+    // 1. 读取原始宽高（不解码 Bitmap）
+    val options = BitmapFactory.Options().also { opts ->
+        opts.inJustDecodeBounds = true
+        resolver.openInputStream(this)?.use { stream ->
+            BitmapFactory.decodeStream(stream, null, opts)
+        }
+    }
+    val rawWidth = options.outWidth
+    val rawHeight = options.outHeight
+    if (rawWidth <= 0 || rawHeight <= 0) {
+        throw RuntimeException("Could not read image dimensions: $this")
+    }
+
+    // 2. 读取 EXIF 方向，判断是否需要交换宽高
+    val needSwap = if (ImageUtil.isJPG(this)) {
+        resolver.openInputStream(this)?.use { stream ->
+            val orientation = ExifInterface(stream)
+                .getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
+            orientation == ExifInterface.ORIENTATION_ROTATE_90
+                    || orientation == ExifInterface.ORIENTATION_ROTATE_270
+                    || orientation == ExifInterface.ORIENTATION_TRANSPOSE
+                    || orientation == ExifInterface.ORIENTATION_TRANSVERSE
+        } == true
+    } else {
+        false
+    }
+
+    return if (needSwap) Size(rawHeight, rawWidth) else Size(rawWidth, rawHeight)
+}
+
 
 /**
  * 将 Uri 解码为方向修正后的 Bitmap，并根据指定的 [scaleType] 缩放到目标尺寸。
