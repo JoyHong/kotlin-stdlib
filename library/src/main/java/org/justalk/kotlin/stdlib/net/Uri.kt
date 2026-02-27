@@ -33,6 +33,7 @@ import kotlin.math.roundToInt
  * @return 方向修正且按 scaleType 缩放后的 Bitmap
  * @throws RuntimeException 如果无法解码图片
  */
+@JvmOverloads
 fun Uri.toBitmap(
     width: Int = Int.MAX_VALUE,
     height: Int = Int.MAX_VALUE,
