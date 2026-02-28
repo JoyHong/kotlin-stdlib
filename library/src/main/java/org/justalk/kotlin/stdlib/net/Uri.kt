@@ -47,21 +47,19 @@ fun Uri.getImageSize(): Size {
     }
 
     // 2. 读取 EXIF 方向，判断是否需要交换宽高
-    val needSwap = if (ImageUtil.isJPG(this)) {
-        try {
-            resolver.openInputStream(this)?.use { stream ->
-                val orientation = ExifInterface(stream)
-                    .getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
-                orientation == ExifInterface.ORIENTATION_ROTATE_90
-                        || orientation == ExifInterface.ORIENTATION_ROTATE_270
-                        || orientation == ExifInterface.ORIENTATION_TRANSPOSE
-                        || orientation == ExifInterface.ORIENTATION_TRANSVERSE
-            } == true
-        } catch (e: IOException) {
-            // EXIF 解析失败（文件损坏等），降级为不交换宽高
-            false
-        }
-    } else {
+    //    AndroidX ExifInterface 支持 JPEG / WebP / PNG / HEIF 等格式，
+    //    对于不含 EXIF 的格式会返回 ORIENTATION_NORMAL，无需额外判断文件类型。
+    val needSwap = try {
+        resolver.openInputStream(this)?.use { stream ->
+            val orientation = ExifInterface(stream)
+                .getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
+            orientation == ExifInterface.ORIENTATION_ROTATE_90
+                    || orientation == ExifInterface.ORIENTATION_ROTATE_270
+                    || orientation == ExifInterface.ORIENTATION_TRANSPOSE
+                    || orientation == ExifInterface.ORIENTATION_TRANSVERSE
+        } == true
+    } catch (e: IOException) {
+        // EXIF 解析失败（文件损坏等），降级为不交换宽高
         false
     }
 
@@ -171,12 +169,10 @@ fun Uri.toBitmap(
         BitmapFactory.decodeStream(stream, null, options)
     } ?: throw RuntimeException("Could not decode Bitmap: $this")
 
-    // 4. EXIF 方向修正
-    if (ImageUtil.isJPG(this)) {
-        val rotated = ImageUtil.rotateImage(bitmap, this)
-        if (rotated != bitmap) {
-            bitmap = rotated
-        }
+    // 4. EXIF 方向修正（支持 JPEG / WebP / PNG / HEIF 等格式）
+    val rotated = ImageUtil.rotateImage(bitmap, this)
+    if (rotated != bitmap) {
+        bitmap = rotated
     }
 
     // 5. 按 scaleType 缩放/裁剪
