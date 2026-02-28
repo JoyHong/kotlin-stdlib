@@ -70,7 +70,8 @@ fun Uri.getImageSize(): Size {
 /**
  * 将 Uri 解码为方向修正后的 Bitmap，并根据指定的 [scaleType] 缩放到目标尺寸。
  *
- * 内部会自动根据 EXIF 信息修正 JPEG 图片的旋转/翻转，然后按 [scaleType] 进行缩放或裁剪。
+ * 内部会自动根据 EXIF 信息修正图片的旋转/翻转（支持 JPEG / WebP / PNG / HEIF 等格式），
+ * 然后按 [scaleType] 进行缩放或裁剪。
  * 使用 inSampleSize 进行高效初始采样，避免加载原始大图导致 OOM。
  *
  * 支持的 ScaleType：
@@ -82,8 +83,11 @@ fun Uri.getImageSize(): Size {
  * @param height    目标高度（像素）
  * @param scaleType 缩放模式，默认 [ImageView.ScaleType.CENTER_INSIDE]
  * @return 方向修正且按 scaleType 缩放后的 Bitmap
+ * @throws IOException 无法打开 Uri 对应的 InputStream（文件不存在、已删除、磁盘错误等）
+ * @throws SecurityException 无权限读取该 Uri（缺少 READ_EXTERNAL_STORAGE 或未授予 URI 权限）
  * @throws RuntimeException 如果无法解码图片
  */
+@Throws(IOException::class, SecurityException::class, RuntimeException::class)
 @JvmOverloads
 fun Uri.toBitmap(
     width: Int = Int.MAX_VALUE,

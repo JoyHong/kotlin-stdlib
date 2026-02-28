@@ -45,9 +45,12 @@ fun File.getImageSize(): Size = Uri.fromFile(this).getImageSize()
  * @param height    目标高度（像素），默认 [Int.MAX_VALUE] 表示不限制
  * @param scaleType 缩放模式，默认 [ImageView.ScaleType.CENTER_INSIDE]
  * @return 方向修正且按 scaleType 缩放后的 Bitmap
+ * @throws IOException 无法打开文件对应的 InputStream（文件不存在、已删除、磁盘错误等）
+ * @throws SecurityException 无权限读取该文件
  * @throws RuntimeException 如果无法解码图片
  * @see [Uri.toBitmap]
  */
+@Throws(IOException::class, SecurityException::class, RuntimeException::class)
 @JvmOverloads
 fun File.toBitmap(
     width: Int = Int.MAX_VALUE,
