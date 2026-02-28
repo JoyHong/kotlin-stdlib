@@ -30,9 +30,12 @@ import java.io.IOException
  * 不会解码完整 Bitmap，仅读取图片头信息和 EXIF，非常轻量。
  *
  * @return 修正方向后的图片尺寸 [Size]（width, height）
- * @throws RuntimeException 如果无法读取图片尺寸
+ * @throws IOException 无法打开文件对应的 InputStream（文件不存在、已删除、磁盘错误等）
+ * @throws SecurityException 无权限读取该文件
+ * @throws RuntimeException 图片头信息解析失败，无法获取有效尺寸
  * @see [Uri.getImageSize]
  */
+@Throws(IOException::class, SecurityException::class, RuntimeException::class)
 fun File.getImageSize(): Size = Uri.fromFile(this).getImageSize()
 
 /**

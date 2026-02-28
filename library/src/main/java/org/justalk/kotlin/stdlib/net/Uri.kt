@@ -13,6 +13,7 @@ import androidx.exifinterface.media.ExifInterface
 import org.justalk.kotlin.stdlib.context.ContextUtils
 import org.justalk.kotlin.stdlib.media.ImageUtil
 import java.io.File
+import java.io.IOException
 import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
@@ -24,17 +25,20 @@ import kotlin.math.roundToInt
  * 不会解码完整 Bitmap，仅读取图片头信息和 EXIF，非常轻量。
  *
  * @return 修正方向后的图片尺寸 [Size]（width, height）
- * @throws RuntimeException 如果无法读取图片尺寸
+ * @throws IOException 无法打开 Uri 对应的 InputStream（文件不存在、已删除、磁盘错误等）
+ * @throws SecurityException 无权限读取该 Uri （缺少 READ_EXTERNAL_STORAGE 或未授予 URI 权限）
+ * @throws RuntimeException 图片头信息解析失败，无法获取有效尺寸
  */
+@Throws(IOException::class, SecurityException::class, RuntimeException::class)
 fun Uri.getImageSize(): Size {
     val resolver = ContextUtils.getApplication().contentResolver
 
     // 1. 读取原始宽高（不解码 Bitmap）
     val options = BitmapFactory.Options().also { opts ->
         opts.inJustDecodeBounds = true
-        resolver.openInputStream(this)?.use { stream ->
-            BitmapFactory.decodeStream(stream, null, opts)
-        }
+        val stream = resolver.openInputStream(this)
+            ?: throw IOException("Could not open InputStream: $this")
+        stream.use { BitmapFactory.decodeStream(it, null, opts) }
     }
     val rawWidth = options.outWidth
     val rawHeight = options.outHeight
@@ -44,14 +48,19 @@ fun Uri.getImageSize(): Size {
 
     // 2. 读取 EXIF 方向，判断是否需要交换宽高
     val needSwap = if (ImageUtil.isJPG(this)) {
-        resolver.openInputStream(this)?.use { stream ->
-            val orientation = ExifInterface(stream)
-                .getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
-            orientation == ExifInterface.ORIENTATION_ROTATE_90
-                    || orientation == ExifInterface.ORIENTATION_ROTATE_270
-                    || orientation == ExifInterface.ORIENTATION_TRANSPOSE
-                    || orientation == ExifInterface.ORIENTATION_TRANSVERSE
-        } == true
+        try {
+            resolver.openInputStream(this)?.use { stream ->
+                val orientation = ExifInterface(stream)
+                    .getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
+                orientation == ExifInterface.ORIENTATION_ROTATE_90
+                        || orientation == ExifInterface.ORIENTATION_ROTATE_270
+                        || orientation == ExifInterface.ORIENTATION_TRANSPOSE
+                        || orientation == ExifInterface.ORIENTATION_TRANSVERSE
+            } == true
+        } catch (e: IOException) {
+            // EXIF 解析失败（文件损坏等），降级为不交换宽高
+            false
+        }
     } else {
         false
     }
