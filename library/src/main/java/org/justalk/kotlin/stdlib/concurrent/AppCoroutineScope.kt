@@ -52,15 +52,6 @@ object AppCoroutineScope {
     val ioScope = CoroutineScope(Dispatchers.IO + appJob + globalExceptionHandler)
 
     /**
-     * 串行 IO 作用域
-     * 基于 Dispatchers.IO.limitedParallelism(1)，复用 IO 线程池，限制并发为 1
-     * 适用于：需要保证顺序执行的 IO 操作，例如顺序写入、串行网络请求
-     */
-    val ioSerialScope: CoroutineScope = CoroutineScope(
-        Dispatchers.IO.limitedParallelism(1) + appJob + globalExceptionHandler
-    )
-
-    /**
      * 主线程作用域 (慎用，一般建议用 LifecycleScope/ViewModelScope)
      * 但在某些纯静态工具类需要回调 UI 时可能会用到
      */
