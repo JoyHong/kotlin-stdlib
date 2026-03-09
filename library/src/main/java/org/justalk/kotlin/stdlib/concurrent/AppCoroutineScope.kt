@@ -49,13 +49,13 @@ object AppCoroutineScope {
      * 适用于：数据库读写、文件操作、网络请求
      * 特点：线程池调度，并发高
      */
-    val ioScope = CoroutineScope(Dispatchers.IO + appJob + globalExceptionHandler)
+    val ioScope by lazy { CoroutineScope(Dispatchers.IO + appJob + globalExceptionHandler) }
 
     /**
      * 主线程作用域 (慎用，一般建议用 LifecycleScope/ViewModelScope)
      * 但在某些纯静态工具类需要回调 UI 时可能会用到
      */
-    val mainScope = CoroutineScope(Dispatchers.Main.immediate + appJob + globalExceptionHandler)
+    val mainScope by lazy { CoroutineScope(Dispatchers.Main.immediate + appJob + globalExceptionHandler) }
 
     /**
      * 公共的数据库串行线程池 (ExecutorService)
