@@ -32,20 +32,16 @@ MD5 在此仅用于 URL 映射；同 key 不比较或覆盖内容，内容变化
 // 整段在后台执行；业务已协调 owner 生命周期，downloadTo 由业务实现。
 val key = keyOf(url)
 val tmp = store.createTempFile()
-var cleanupTemp = true
 try {
     downloadTo(url, tmp) // 返回前必须完成写入并关闭所有流。
     val file = store.put(key, tmp, ownerId, "image")
     // file 是只读的正式路径，不得删除。
-} catch (e: SQLiteException) {
-    cleanupTemp = false // 保留现场；异常向上传递，交由业务处理实例恢复。
-    throw e
 } finally {
-    if (cleanupTemp) tmp.delete() // 只清理原临时路径；写入必须已经停止。
+    tmp.delete() // 只清理原临时路径；写入必须已经停止，不删除正式文件。
 }
 ```
 
-示例使用 `java.io.File`、`java.security.MessageDigest`、`android.database.sqlite.SQLiteException` 和 `org.justalk.kotlin.stdlib.io.RefFileStore`。下载由业务负责，库不做下载或进行中任务去重。
+示例使用 `java.io.File`、`java.security.MessageDigest` 和 `org.justalk.kotlin.stdlib.io.RefFileStore`。下载由业务负责，库不做下载或进行中任务去重。
 
 `put` 只接收当前实例 `createTempFile()` 创建、写完整且流已关闭的文件；直接改名，不复制。首次成功提交确定内容、大小快照和 tag（默认 `""`）。后续同 key 的 `put` 只确保 owner 引用存在，即使传入不同内容或 tag，也不会覆盖首次值；引用提交后尝试删除本次临时文件，删除失败仍返回已有正式文件。失败后原临时路径可能已不存在，重试前可能需要重新准备内容。临时文件漏删或删除失败由下次 `open` 清理。
 
@@ -80,15 +76,11 @@ val imageBytes = usage["image"]?.totalBytes ?: 0L
 val key = keyOf(url)
 if (!store.addRef(key, ownerId)) {
     val tmp = store.createTempFile()
-    var cleanupTemp = true
     try {
         oldFile.copyTo(tmp, overwrite = true) // tmp 已存在；复制完成并关闭流后才能提交。
         store.put(key, tmp, ownerId, "image")
-    } catch (e: SQLiteException) {
-        cleanupTemp = false
-        throw e
     } finally {
-        if (cleanupTemp) tmp.delete()
+        tmp.delete() // 只清理原临时路径，不删除正式文件或旧文件。
     }
 }
 ```
@@ -100,10 +92,14 @@ if (!store.addRef(key, ownerId)) {
 | 情况 | 契约 |
 | --- | --- |
 | key、ownerId、sourceFile 违反契约 | `IllegalArgumentException` |
-| 主线程调用、关闭或失效实例、重复打开 root | `IllegalStateException` |
+| 主线程调用、已关闭实例、重复打开 root | `IllegalStateException` |
 | 文件 I/O 失败 | `IOException`；引用提交后删除文件失败按上述约定保留残留 |
 | 数据库失败（包括统计查询） | 原生 `SQLiteException` 向上传递，不能当作空结果 |
 
-改名成功后确认数据库回滚：原临时路径可能消失，正式文件成为孤儿。数据库提交结果无法确认时，库保留文件并停用实例，只允许 `close`。业务不得自动重试或继续使用该实例；先停止并等待在途调用和写入结束，再后台关闭重开，以实际数据库状态为准。
+单次操作失败只向本次调用抛错；事务正常收尾后，同一实例可继续使用。事务收尾抛 `SQLiteException` 时，库保留文件，并在下次调用执行前关闭旧数据库连接、重新打开同一数据库。恢复失败则向当前调用抛错，后续调用仍可再次尝试，不增加后台重试，也不重放失败的业务操作。
+
+内部恢复始终在实例锁内进行，保留 root 独占锁，不清空 tmp、不丢失其他在途临时文件的登记；这些文件写完关流后仍能交给同一实例 `put`。显式 `close` 后不会自动恢复。调用方无需根据异常重开实例；账号/root 切换仍需自行协调旧实例关闭与在途下载。
+
+改名成功后确认数据库回滚：原临时路径可能消失，正式文件成为孤儿。提交结果不确定时，不能根据异常断言操作没有副作用，后续以数据库实际状态为准；失败的 `put` 可能已经移走源文件。只可清理停止写入后的原临时路径，不要删除正式文件或自动重试业务操作。
 
 业务可安排后台 `reconcile()` 清理无 Entry 的正式文件；它不清理 tmp、悬空 Entry 或残留业务引用。单文件删除失败计入结果后继续；目录或数据库查询失败直接抛异常。v1 不承诺外部删改自动恢复，也未承诺或验证断电持久性。

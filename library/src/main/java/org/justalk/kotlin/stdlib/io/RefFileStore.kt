@@ -19,13 +19,13 @@ import java.util.UUID
  * 独占 root，持久化保存不可变文件及 owner 引用；最后一个引用释放后删除文件，支持孤儿文件对账。
  * 所有同步方法必须在后台线程调用。正式文件只能读取，不得由调用方修改或删除。
  * 关闭前，调用方必须停止并等待所有库调用及临时文件写入结束；不支持并发关闭与使用。
- * 提交结果不确定时保留文件并停用实例；关闭重开后以数据库实际状态为准，不自动重试。
+ * 提交结果不确定时保留文件；下次调用先恢复内部数据库连接，以实际状态为准，不重放失败操作。
  */
 class RefFileStore private constructor(
     private val root: File,
     private val tmp: File,
     private val helper: StoreDatabase,
-    private val database: SQLiteDatabase,
+    private var database: SQLiteDatabase,
     private val lockFile: RandomAccessFile,
     private val fileLock: FileLock
 ) : Closeable {
@@ -34,7 +34,7 @@ class RefFileStore private constructor(
     private val monitor = Any()
     private val tempFiles = mutableSetOf<File>()
     private var closed = false
-    private var unusable = false
+    private var needsRecovery = false
 
     companion object {
         private val openRoots = mutableSetOf<File>()
@@ -127,7 +127,7 @@ class RefFileStore private constructor(
         }
     }
 
-    /** 创建本实例认可的临时文件。写入失败或取消时，调用方停止写入后自行清理。 */
+    /** 创建本实例认可的临时文件。写入失败或取消时，调用方停止写入后自行清理；内部数据库恢复失败仍抛错。 */
     @Throws(IOException::class)
     fun createTempFile(): File {
         checkBackgroundThread()
@@ -147,7 +147,7 @@ class RefFileStore private constructor(
      * 同 key 保留首次内容和 tag，仅确保 ownerId 引用存在（按原值精确匹配）。
      * 无 Entry 时，以本次完整临时文件直接改名替换同 key 孤儿，不复用孤儿内容。
      * 改名失败抛 IOException，回滚成功时源临时文件仍在；改名后确认回滚则抛原数据库异常，
-     * 不恢复源路径，正式文件成为孤儿。提交结果不确定时保留文件，本实例只允许 close 后重开。
+     * 不恢复源路径，正式文件成为孤儿。提交结果不确定时保留文件，下次调用先恢复数据库连接。
      * 已有 key 的引用提交后，临时文件删除失败仍返回已有正式文件。
      */
     @JvmOverloads
@@ -336,7 +336,14 @@ class RefFileStore private constructor(
     }
 
     private fun checkUsable() {
-        check(!closed && !unusable) { "Store is closed or requires reopening" }
+        check(!closed) { "Store is closed" }
+        if (needsRecovery || !database.isOpen) {
+            needsRecovery = true
+            // 仅重建数据库连接，保留目录独占锁、在途临时文件及其登记。
+            helper.close()
+            database = helper.writableDatabase
+            needsRecovery = false
+        }
     }
 
     private fun endTransaction(operationFailure: Throwable?) {
@@ -344,7 +351,7 @@ class RefFileStore private constructor(
             database.endTransaction()
         } catch (failure: SQLiteException) {
             // 不重试或删除文件：事务结束失败时无法确认最终提交状态。
-            unusable = true
+            needsRecovery = true
             if (operationFailure is SQLiteException) {
                 if (operationFailure !== failure) operationFailure.addSuppressed(failure)
                 throw operationFailure
