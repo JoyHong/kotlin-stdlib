@@ -230,27 +230,33 @@ class RefFileStore private constructor(
     }
 
     /**
-     * 幂等释放指定引用；最后一个引用与 Entry 在同一事务删除，提交后再尝试删除文件。
+     * 按原值精确匹配 ownerId，幂等释放其全部引用；最后一个引用与 Entry 在同一事务删除，提交后再尝试删除文件。
      * 磁盘删除失败不报错，残留为孤儿；调用方负责避免已删除 owner 再次提交引用。
      */
     @Throws(SQLiteException::class)
-    fun removeRef(key: String, ownerId: String) {
+    fun removeRef(ownerId: String) {
         checkBackgroundThread()
         synchronized(monitor) {
             checkUsable()
-            validateKey(key)
             require(ownerId.isNotBlank()) { "ownerId must not be blank" }
-            var removeFile = false
+            val removeFiles = mutableListOf<String>()
             var failure: Throwable? = null
             database.beginTransaction()
             try {
-                val removed = database.delete("ref", "key = ? AND owner = ?", arrayOf(key, ownerId))
-                if (removed > 0) {
+                val keys = database.rawQuery(
+                    "SELECT key FROM ref WHERE owner = ?", arrayOf(ownerId)
+                ).use { cursor ->
+                    val keys = mutableListOf<String>()
+                    while (cursor.moveToNext()) keys.add(cursor.getString(0))
+                    keys
+                }
+                database.delete("ref", "owner = ?", arrayOf(ownerId))
+                for (key in keys) {
                     val hasRefs = database.rawQuery(
                         "SELECT 1 FROM ref WHERE key = ? LIMIT 1", arrayOf(key)
                     ).use { it.moveToFirst() }
-                    if (!hasRefs) {
-                        removeFile = database.delete("entry", "key = ?", arrayOf(key)) > 0
+                    if (!hasRefs && database.delete("entry", "key = ?", arrayOf(key)) > 0) {
+                        removeFiles.add(key)
                     }
                 }
                 database.setTransactionSuccessful()
@@ -260,7 +266,7 @@ class RefFileStore private constructor(
             } finally {
                 endTransaction(failure)
             }
-            if (removeFile) {
+            for (key in removeFiles) {
                 try {
                     File(files, key).delete()
                 } catch (_: SecurityException) {
