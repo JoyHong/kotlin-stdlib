@@ -202,7 +202,7 @@ class RefFileStore private constructor(
                         put("tag", tag)
                     })
                 }
-                database.execSQL("INSERT OR IGNORE INTO ref (key, owner) VALUES (?, ?)", arrayOf(key, ownerId))
+                database.execSQL("INSERT OR IGNORE INTO ref (`key`, owner) VALUES (?, ?)", arrayOf(key, ownerId))
                 if (!existing) {
                     // 此 key 无 Entry，其旧目录中的文件均为孤儿；先处理文件与目录形态的冲突。
                     val orphan = if (relativePath != null) File(files, key) else destination
@@ -252,7 +252,7 @@ class RefFileStore private constructor(
             var failure: Throwable? = null
             database.beginTransaction()
             try {
-                database.execSQL("INSERT OR IGNORE INTO ref (key, owner) VALUES (?, ?)", arrayOf(key, ownerId))
+                database.execSQL("INSERT OR IGNORE INTO ref (`key`, owner) VALUES (?, ?)", arrayOf(key, ownerId))
                 database.setTransactionSuccessful()
             } catch (e: Throwable) {
                 failure = e
@@ -279,7 +279,7 @@ class RefFileStore private constructor(
             database.beginTransaction()
             try {
                 val entries = database.rawQuery(
-                    "SELECT entry.key, entry.path FROM entry JOIN ref ON entry.key = ref.key WHERE ref.owner = ?",
+                    "SELECT entry.`key`, entry.path FROM entry JOIN ref ON entry.`key` = ref.`key` WHERE ref.owner = ?",
                     arrayOf(ownerId)
                 ).use { cursor ->
                     val entries = mutableListOf<Pair<String, String>>()
@@ -289,9 +289,9 @@ class RefFileStore private constructor(
                 database.delete("ref", "owner = ?", arrayOf(ownerId))
                 for ((key, path) in entries) {
                     val hasRefs = database.rawQuery(
-                        "SELECT 1 FROM ref WHERE key = ? LIMIT 1", arrayOf(key)
+                        "SELECT 1 FROM ref WHERE `key` = ? LIMIT 1", arrayOf(key)
                     ).use { it.moveToFirst() }
-                    if (!hasRefs && database.delete("entry", "key = ?", arrayOf(key)) > 0) {
+                    if (!hasRefs && database.delete("entry", "`key` = ?", arrayOf(key)) > 0) {
                         removeFiles.add(path)
                     }
                 }
@@ -414,11 +414,11 @@ class RefFileStore private constructor(
     }
 
     private fun hasEntry(key: String): Boolean = database.rawQuery(
-        "SELECT 1 FROM entry WHERE key = ?", arrayOf(key)
+        "SELECT 1 FROM entry WHERE `key` = ?", arrayOf(key)
     ).use { it.moveToFirst() }
 
     private fun entryPath(key: String): String? = database.rawQuery(
-        "SELECT path FROM entry WHERE key = ?", arrayOf(key)
+        "SELECT path FROM entry WHERE `key` = ?", arrayOf(key)
     ).use { if (it.moveToFirst()) it.getString(0) else null }
 
     private fun listFilesRecursively(directory: File): List<File> {
@@ -462,8 +462,8 @@ class RefFileStore private constructor(
         }
 
         override fun onCreate(db: SQLiteDatabase) {
-            db.execSQL("CREATE TABLE entry (key TEXT PRIMARY KEY, path TEXT NOT NULL UNIQUE, size INTEGER NOT NULL, tag TEXT NOT NULL DEFAULT '')")
-            db.execSQL("CREATE TABLE ref (key TEXT NOT NULL REFERENCES entry(key) ON DELETE CASCADE, owner TEXT NOT NULL, PRIMARY KEY (key, owner))")
+            db.execSQL("CREATE TABLE entry (`key` TEXT PRIMARY KEY, path TEXT NOT NULL UNIQUE, size INTEGER NOT NULL, tag TEXT NOT NULL DEFAULT '')")
+            db.execSQL("CREATE TABLE ref (`key` TEXT NOT NULL REFERENCES entry(`key`) ON DELETE CASCADE, owner TEXT NOT NULL, PRIMARY KEY (`key`, owner))")
         }
 
         override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
