@@ -1,7 +1,7 @@
 # RefFileStore 接入说明
 
 RefFileStore 随现有 `library` 模块分发，仅使用 Android/JDK，不新增依赖。包名为 `org.justalk.kotlin.stdlib.io`。
-契约依据：[RefFileStore v1 技术规格](https://pb9n6xz6e3.feishu.cn/docx/KJDmdF5BqoC34mxx8PMci1MunSh) revision 208；按后续确认集成到现有模块。
+契约依据：[RefFileStore v1 技术规格](https://pb9n6xz6e3.feishu.cn/docx/KJDmdF5BqoC34mxx8PMci1MunSh) revision 208；按后续确认集成到现有模块，并支持保留原始相对路径及源文件后缀。
 
 ## 打开、线程与关闭
 
@@ -18,7 +18,7 @@ val store = RefFileStore.open(File(context.filesDir, "ref_media"))
 
 ## key 与临时文件提交
 
-key 是不可变内容标识，长度 1–128，仅允许 ASCII `[A-Za-z0-9_-]`，不能直接用 URL 或带扩展名的文件名。URL 按 UTF-8 编码计算 MD5，再输出 32 字符小写十六进制，可作为合法 key：
+key 是调用方分配的不可变文件标识，长度 1–128，仅允许 ASCII `[A-Za-z0-9_-]`，不能直接用 URL 或带扩展名的文件名。URL 按 UTF-8 编码计算 MD5，再输出 32 字符小写十六进制，可作为合法 key：
 
 ```kotlin
 fun keyOf(url: String): String =
@@ -26,12 +26,12 @@ fun keyOf(url: String): String =
         .joinToString("") { "%02x".format(it) }
 ```
 
-MD5 在此仅用于 URL 映射；同 key 不比较或覆盖内容，内容变化必须换 key。ownerId 必须非空白，按原值精确匹配，不 trim、不转换大小写。
+MD5 在此仅用于 URL 映射；同 key 不比较或覆盖内容，内容或所需原始路径变化时必须换 key。相同内容需要以不同原始名称或相对路径保存时，由调用方分配不同 key，允许存储多份。ownerId 必须非空白，按原值精确匹配，不 trim、不转换大小写。
 
 ```kotlin
 // 整段在后台执行；业务已协调 owner 生命周期，downloadTo 由业务实现。
 val key = keyOf(url)
-val tmp = store.createTempFile()
+val tmp = store.createTempFile("jpg") // 扩展名不带点；无参数时仍创建无后缀临时文件。
 try {
     downloadTo(url, tmp) // 返回前必须完成写入并关闭所有流。
     val file = store.put(key, tmp, ownerId, "image")
@@ -43,7 +43,38 @@ try {
 
 示例使用 `java.io.File`、`java.security.MessageDigest` 和 `org.justalk.kotlin.stdlib.io.RefFileStore`。下载由业务负责，库不做下载或进行中任务去重。
 
-`put` 只接收当前实例 `createTempFile()` 创建、写完整且流已关闭的文件；直接改名，不复制。首次成功提交确定内容、大小快照和 tag（默认 `""`）。后续同 key 的 `put` 只确保 owner 引用存在，即使传入不同内容或 tag，也不会覆盖首次值；引用提交后尝试删除本次临时文件，删除失败仍返回已有正式文件。失败后原临时路径可能已不存在，重试前可能需要重新准备内容。临时文件漏删或删除失败由下次 `open` 清理。
+`createTempFile(extension: String = "")` 的扩展名只允许 ASCII 字母或数字，不带点或目录；大小写保留，默认不添加后缀。业务不能自行改名临时文件后提交。
+
+`put(key, sourceFile, ownerId, tag = "", relativePath = null)` 的 `relativePath` 位于原 `tag` 参数之后，现有 Kotlin、Java 调用无需修改。正式路径按以下规则确定：
+
+| 首次提交条件 | 正式路径 |
+| --- | --- |
+| 指定 `relativePath = "项目资料/报价单.xlsx"` | `root/files/<key>/项目资料/报价单.xlsx` |
+| 未指定 `relativePath`，源文件带 `.jpg` 后缀 | `root/files/<key>.jpg` |
+| 未指定 `relativePath`，源文件无后缀 | `root/files/<key>` |
+
+指定 `relativePath` 时完整使用其文件名，不追加源文件后缀；例如 `relativePath = "说明"` 即使源文件带 `.txt`，正式文件也叫 `说明`。库不检测内容格式，调用方负责提供与实际内容匹配的后缀。
+
+`relativePath` 使用 `/` 分隔，必须包含有效文件名；不允许绝对路径、空白路径段、`.`、`..`、反斜杠、NUL 或符号链接越界。第三方工具直接读取正式文件名时可获得原始名称：
+
+```kotlin
+val tmp = store.createTempFile()
+try {
+    downloadTo(url, tmp)
+    val file = store.put(
+        key, tmp, ownerId,
+        tag = "attachment",
+        relativePath = "项目资料/报价单.xlsx"
+    )
+    // file.name == "报价单.xlsx"；get(key) 在重新打开 store 后仍返回该路径。
+} finally {
+    tmp.delete()
+}
+```
+
+`put` 只接收当前实例 `createTempFile` 创建、写完整且流已关闭的文件；直接改名，不复制。首次成功提交确定内容、大小快照、tag（默认 `""`）及正式路径。后续同 key 的 `put` 只确保 owner 引用存在，即使传入不同内容、tag、后缀或相对路径，也不会覆盖首次值；引用提交后尝试删除本次临时文件，删除失败仍返回已有正式文件。失败后原临时路径可能已不存在，重试前可能需要重新准备内容。临时文件漏删或删除失败由下次 `open` 清理。
+
+正式路径保存在 Entry 中，`get(key)` 和 `put` 返回首次确定的实际路径。没有需要兼容的旧版存储数据，本次直接调整建库结构，不提供旧版数据库迁移。
 
 ## owner 生命周期与读取
 
@@ -51,7 +82,7 @@ try {
 
 `store.get(key)` 只有 Entry 和正式文件都存在时才返回路径，否则返回 `null`。它不增加引用，也不提供读取保活：拿到路径后仍可能被最后一次释放删除。业务应维持有效 owner 引用，并协调读取与释放。
 
-删除 owner 前，业务必须停止并协调其下载与提交，然后调用 `store.removeRef(ownerId)`，按原值精确匹配并释放该 owner 的全部引用，无需保留或还原关联 key。仅在提交前查询一次 owner 是否存在仍有竞争窗口，必须防止删除后再 `put` / `addRef`。释放幂等；未知 owner 不产生变更，共享文件保留其他 owner 的引用，只有失去最后一个引用的 Entry 才在同一事务删除，提交后再删磁盘文件。磁盘删除失败不让释放报错，残留为孤儿。
+删除 owner 前，业务必须停止并协调其下载与提交，然后调用 `store.removeRef(ownerId)`，按原值精确匹配并释放该 owner 的全部引用，无需保留或还原关联 key。仅在提交前查询一次 owner 是否存在仍有竞争窗口，必须防止删除后再 `put` / `addRef`。释放幂等；未知 owner 不产生变更，共享文件保留其他 owner 的引用，只有失去最后一个引用的 Entry 才在同一事务删除，提交后再按已登记路径删除磁盘文件，并尝试回收空的相对目录。磁盘删除失败不让释放报错，残留为孤儿。
 
 同一个 owner 的全部引用在单次事务中释放；多个 owner 分别调用时不保证整体原子性。此单参数 API 替代原双参数版本，不保留双参数重载，调用方必须同步更新；无需数据库迁移。v1 不要求持久化释放补偿；业务数据删除后、释放完成前进程被杀，可能残留引用并长期占用空间。库不知道业务 owner 是否已删除，`reconcile()` 不能清理这类多余引用。
 
@@ -75,7 +106,7 @@ val imageBytes = usage["image"]?.totalBytes ?: 0L
 ```kotlin
 val key = keyOf(url)
 if (!store.addRef(key, ownerId)) {
-    val tmp = store.createTempFile()
+    val tmp = store.createTempFile(oldFile.extension)
     try {
         oldFile.copyTo(tmp, overwrite = true) // tmp 已存在；复制完成并关闭流后才能提交。
         store.put(key, tmp, ownerId, "image")
@@ -91,7 +122,7 @@ if (!store.addRef(key, ownerId)) {
 
 | 情况 | 契约 |
 | --- | --- |
-| key、ownerId、sourceFile 违反契约 | `IllegalArgumentException` |
+| key、ownerId、sourceFile、extension、relativePath 违反契约 | `IllegalArgumentException` |
 | 主线程调用、已关闭实例、重复打开 root | `IllegalStateException` |
 | 文件 I/O 失败 | `IOException`；引用提交后删除文件失败按上述约定保留残留 |
 | 数据库失败（包括统计查询） | 原生 `SQLiteException` 向上传递，不能当作空结果 |
@@ -102,4 +133,4 @@ if (!store.addRef(key, ownerId)) {
 
 改名成功后确认数据库回滚：原临时路径可能消失，正式文件成为孤儿。提交结果不确定时，不能根据异常断言操作没有副作用，后续以数据库实际状态为准；失败的 `put` 可能已经移走源文件。只可清理停止写入后的原临时路径，不要删除正式文件或自动重试业务操作。
 
-业务可安排后台 `reconcile()` 清理无 Entry 的正式文件；它不清理 tmp、悬空 Entry 或残留业务引用。单文件删除失败计入结果后继续；目录或数据库查询失败直接抛异常。v1 不承诺外部删改自动恢复，也未承诺或验证断电持久性。
+业务可安排后台 `reconcile()` 递归清理无匹配 Entry 路径的正式文件，并尝试回收空目录，不跟随目录符号链接。删除结果按文件计数，空目录不计数；它不清理 tmp、悬空 Entry 或残留业务引用。单文件删除失败计入结果后继续；目录或数据库查询失败直接抛异常。v1 不承诺外部删改自动恢复，也未承诺或验证断电持久性。

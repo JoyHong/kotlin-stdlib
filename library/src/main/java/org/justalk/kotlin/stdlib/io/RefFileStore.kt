@@ -95,6 +95,13 @@ class RefFileStore private constructor(
                 it in 'A'..'Z' || it in 'a'..'z' || it in '0'..'9' || it == '_' || it == '-'
             }) { "key must contain 1–128 ASCII letters, digits, underscores or hyphens" }
         }
+
+        private fun validateRelativePath(path: String) {
+            require(!File(path).isAbsolute && '\\' !in path && '\u0000' !in path &&
+                path.split('/').all { it.isNotBlank() && it != "." && it != ".." }) {
+                "relativePath must contain a file name and valid relative directories separated by /"
+            }
+        }
     }
 
     /** 返回 Entry 和正式文件均存在的路径；不新增引用，也不提供读取保活。 */
@@ -104,7 +111,7 @@ class RefFileStore private constructor(
         return synchronized(monitor) {
             checkUsable()
             validateKey(key)
-            File(files, key).takeIf { hasEntry(key) && it.isFile }
+            entryPath(key)?.let { File(files, it).takeIf { file -> file.isFile } }
         }
     }
 
@@ -127,15 +134,20 @@ class RefFileStore private constructor(
         }
     }
 
-    /** 创建本实例认可的临时文件。写入失败或取消时，调用方停止写入后自行清理；内部数据库恢复失败仍抛错。 */
+    /** 创建本实例认可的临时文件；extension 为不带点的 ASCII 字母或数字，默认无后缀。写入失败或取消时由调用方停止写入后清理。 */
+    @JvmOverloads
     @Throws(IOException::class)
-    fun createTempFile(): File {
+    fun createTempFile(extension: String = ""): File {
         checkBackgroundThread()
         return synchronized(monitor) {
             checkUsable()
+            require(extension.all {
+                it in 'A'..'Z' || it in 'a'..'z' || it in '0'..'9'
+            }) { "extension must contain only ASCII letters or digits, without a dot" }
+            val suffix = if (extension.isEmpty()) "" else ".$extension"
             var file: File
             do {
-                file = File(tmp, UUID.randomUUID().toString())
+                file = File(tmp, UUID.randomUUID().toString() + suffix)
             } while (!file.createNewFile())
             tempFiles.add(file)
             file
@@ -144,7 +156,8 @@ class RefFileStore private constructor(
 
     /**
      * sourceFile 必须由本实例创建，内容完整且写入流已关闭；只改名，不复制。
-     * 同 key 保留首次内容和 tag，仅确保 ownerId 引用存在（按原值精确匹配）。
+     * relativePath 保留原始相对路径和文件名；未提供时按 key 加源文件后缀命名。
+     * 同 key 保留首次内容、tag 和路径，仅确保 ownerId 引用存在（按原值精确匹配）。
      * 无 Entry 时，以本次完整临时文件直接改名替换同 key 孤儿，不复用孤儿内容。
      * 改名失败抛 IOException，回滚成功时源临时文件仍在；改名后确认回滚则抛原数据库异常，
      * 不恢复源路径，正式文件成为孤儿。提交结果不确定时保留文件，下次调用先恢复数据库连接。
@@ -152,7 +165,9 @@ class RefFileStore private constructor(
      */
     @JvmOverloads
     @Throws(IOException::class, SQLiteException::class)
-    fun put(key: String, sourceFile: File, ownerId: String, tag: String = ""): File {
+    fun put(
+        key: String, sourceFile: File, ownerId: String, tag: String = "", relativePath: String? = null
+    ): File {
         checkBackgroundThread()
         return synchronized(monitor) {
             checkUsable()
@@ -162,21 +177,41 @@ class RefFileStore private constructor(
             require(source in tempFiles && source.isFile && source.canonicalFile == source) {
                 "sourceFile must be a temporary file created by this store"
             }
-            val destination = File(files, key)
+            val extension = source.extension
+            val path = if (relativePath != null) {
+                validateRelativePath(relativePath)
+                "$key/$relativePath"
+            } else if (extension.isNotEmpty()) {
+                "$key.$extension"
+            } else {
+                key
+            }
+            var destination = File(files, path)
             var existing = false
             var failure: Throwable? = null
             database.beginTransaction()
             try {
-                existing = hasEntry(key)
+                val existingPath = entryPath(key)
+                existing = existingPath != null
+                if (existingPath != null) destination = File(files, existingPath)
                 if (!existing) {
                     database.insertOrThrow("entry", null, ContentValues().apply {
                         put("key", key)
+                        put("path", path)
                         put("size", source.length())
                         put("tag", tag)
                     })
                 }
                 database.execSQL("INSERT OR IGNORE INTO ref (key, owner) VALUES (?, ?)", arrayOf(key, ownerId))
                 if (!existing) {
+                    // 此 key 无 Entry，其旧目录中的文件均为孤儿；先处理文件与目录形态的冲突。
+                    val orphan = if (relativePath != null) File(files, key) else destination
+                    if ((orphan.isDirectory || relativePath != null && orphan.exists()) && !deleteTree(orphan)) {
+                        throw IOException("Cannot delete orphan: $orphan")
+                    }
+                    val parent = destination.parentFile!!
+                    require(parent.canonicalFile == parent.absoluteFile) { "relativePath must not traverse symbolic links" }
+                    ensureDirectory(parent)
                     // monitor 覆盖无 Entry 的确认、孤儿替换及提交，替换只做这一次改名。
                     val renamed = try {
                         source.renameTo(destination)
@@ -243,20 +278,21 @@ class RefFileStore private constructor(
             var failure: Throwable? = null
             database.beginTransaction()
             try {
-                val keys = database.rawQuery(
-                    "SELECT key FROM ref WHERE owner = ?", arrayOf(ownerId)
+                val entries = database.rawQuery(
+                    "SELECT entry.key, entry.path FROM entry JOIN ref ON entry.key = ref.key WHERE ref.owner = ?",
+                    arrayOf(ownerId)
                 ).use { cursor ->
-                    val keys = mutableListOf<String>()
-                    while (cursor.moveToNext()) keys.add(cursor.getString(0))
-                    keys
+                    val entries = mutableListOf<Pair<String, String>>()
+                    while (cursor.moveToNext()) entries.add(cursor.getString(0) to cursor.getString(1))
+                    entries
                 }
                 database.delete("ref", "owner = ?", arrayOf(ownerId))
-                for (key in keys) {
+                for ((key, path) in entries) {
                     val hasRefs = database.rawQuery(
                         "SELECT 1 FROM ref WHERE key = ? LIMIT 1", arrayOf(key)
                     ).use { it.moveToFirst() }
                     if (!hasRefs && database.delete("entry", "key = ?", arrayOf(key)) > 0) {
-                        removeFiles.add(key)
+                        removeFiles.add(path)
                     }
                 }
                 database.setTransactionSuccessful()
@@ -266,9 +302,10 @@ class RefFileStore private constructor(
             } finally {
                 endTransaction(failure)
             }
-            for (key in removeFiles) {
+            for (path in removeFiles) {
                 try {
-                    File(files, key).delete()
+                    val file = File(files, path)
+                    if (file.delete()) pruneDirectories(file.parentFile)
                 } catch (_: SecurityException) {
                     // 数据库释放已提交，正式文件留作孤儿。
                 }
@@ -286,27 +323,36 @@ class RefFileStore private constructor(
         checkBackgroundThread()
         synchronized(monitor) { checkUsable() }
         val candidates = try {
-            files.listFiles() ?: throw IOException("Cannot list $files")
+            listFilesRecursively(files)
         } catch (e: SecurityException) {
             throw IOException("Cannot list $files", e)
         }
         val entries = synchronized(monitor) {
             checkUsable()
-            database.rawQuery("SELECT key FROM entry", null).use { cursor ->
-                val keys = mutableSetOf<String>()
-                while (cursor.moveToNext()) keys.add(cursor.getString(0))
-                keys
+            database.rawQuery("SELECT path FROM entry", null).use { cursor ->
+                val paths = mutableSetOf<String>()
+                while (cursor.moveToNext()) paths.add(cursor.getString(0))
+                paths
             }
         }
         var deleted = 0
         var failed = 0
         for (file in candidates) {
-            if (file.name in entries) continue
+            val path = file.relativeTo(files).path
+            if (path in entries) continue
             synchronized(monitor) {
                 checkUsable()
                 // 与 put 的改名和事务提交共用锁，不能把在途文件当成孤儿。
-                if (!hasEntry(file.name)) {
+                val hasEntry = database.rawQuery(
+                    "SELECT 1 FROM entry WHERE path = ?", arrayOf(path)
+                ).use { it.moveToFirst() }
+                if (!hasEntry) {
                     val removed = try {
+                        // 目录只尝试删除空目录，不能递归删除其中可能新增的有效文件。
+                        if (file.isDirectory && file.canonicalFile == file.absoluteFile) {
+                            file.delete()
+                            return@synchronized
+                        }
                         file.delete()
                     } catch (_: SecurityException) {
                         false
@@ -371,6 +417,36 @@ class RefFileStore private constructor(
         "SELECT 1 FROM entry WHERE key = ?", arrayOf(key)
     ).use { it.moveToFirst() }
 
+    private fun entryPath(key: String): String? = database.rawQuery(
+        "SELECT path FROM entry WHERE key = ?", arrayOf(key)
+    ).use { if (it.moveToFirst()) it.getString(0) else null }
+
+    private fun listFilesRecursively(directory: File): List<File> {
+        val result = mutableListOf<File>()
+        val children = directory.listFiles() ?: throw IOException("Cannot list $directory")
+        for (file in children) {
+            if (file.isDirectory && file.canonicalFile == file.absoluteFile) {
+                result.addAll(listFilesRecursively(file))
+            }
+            result.add(file)
+        }
+        return result
+    }
+
+    private fun deleteTree(file: File): Boolean {
+        if (file.isDirectory && file.canonicalFile == file.absoluteFile) {
+            if (!listFilesRecursively(file).all { it.delete() }) return false
+        }
+        return file.delete()
+    }
+
+    private fun pruneDirectories(parent: File?) {
+        var directory = parent
+        while (directory != null && directory != files && directory.delete()) {
+            directory = directory.parentFile
+        }
+    }
+
     private class StoreDatabase(path: File) : SQLiteOpenHelper(
         object : ContextWrapper(null) {
             override fun getDatabasePath(name: String): File = path
@@ -386,7 +462,7 @@ class RefFileStore private constructor(
         }
 
         override fun onCreate(db: SQLiteDatabase) {
-            db.execSQL("CREATE TABLE entry (key TEXT PRIMARY KEY, size INTEGER NOT NULL, tag TEXT NOT NULL DEFAULT '')")
+            db.execSQL("CREATE TABLE entry (key TEXT PRIMARY KEY, path TEXT NOT NULL UNIQUE, size INTEGER NOT NULL, tag TEXT NOT NULL DEFAULT '')")
             db.execSQL("CREATE TABLE ref (key TEXT NOT NULL REFERENCES entry(key) ON DELETE CASCADE, owner TEXT NOT NULL, PRIMARY KEY (key, owner))")
         }
 
