@@ -267,11 +267,12 @@ class RefFileStore private constructor(
     /**
      * 按原值精确匹配 ownerId，幂等释放其全部引用；最后一个引用与 Entry 在同一事务删除，提交后再尝试删除文件。
      * 磁盘删除失败不报错，残留为孤儿；调用方负责避免已删除 owner 再次提交引用。
+     * 返回本次事务成功移除的 Entry 数，不受磁盘删除结果影响；返回 0 不代表引用释放失败。
      */
     @Throws(SQLiteException::class)
-    fun removeRef(ownerId: String) {
+    fun removeRef(ownerId: String): Int {
         checkBackgroundThread()
-        synchronized(monitor) {
+        return synchronized(monitor) {
             checkUsable()
             require(ownerId.isNotBlank()) { "ownerId must not be blank" }
             val removeFiles = mutableListOf<String>()
@@ -310,6 +311,7 @@ class RefFileStore private constructor(
                     // 数据库释放已提交，正式文件留作孤儿。
                 }
             }
+            removeFiles.size
         }
     }
 
