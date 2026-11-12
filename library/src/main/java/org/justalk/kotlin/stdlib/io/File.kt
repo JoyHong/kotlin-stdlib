@@ -60,7 +60,12 @@ fun File.toBitmap(
 
 
 /**
- * 获取文件的 MimeType 信息
+ * 根据文件名后缀推断 MIME 类型，不区分后缀大小写。
+ *
+ * 不读取文件头或文件内容，也不检查文件是否存在，结果可能与文件的实际类型不一致。
+ * 如需通过图片头识别实际 MIME 类型，请使用 [getImageMimeType]。
+ *
+ * @return 后缀对应的 MIME 类型；后缀为空或无法识别时返回 <code>&#42;/&#42;</code>
  */
 fun File.mimeType(): String {
     val extension = extension
