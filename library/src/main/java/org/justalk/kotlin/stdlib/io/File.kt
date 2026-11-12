@@ -68,6 +68,25 @@ fun File.mimeType(): String {
 }
 
 /**
+ * 读取图片头信息获取实际 MIME 类型，不依赖文件后缀，也不解码完整 Bitmap。
+ *
+ * 本函数同步执行文件读取和图片头解析，不会自动切换线程。
+ * 虽然不加载完整像素数据，仍可能阻塞调用线程，建议在 Dispatchers.IO 中调用，避免主线程卡顿。
+ *
+ * 支持的图片格式取决于当前 Android 系统的 BitmapFactory 解码能力。
+ *
+ * @return 图片的 MIME 类型（如 image/jpeg、image/png、image/webp）；
+ * 文件不存在、无法读取、不是图片或格式无法识别时返回 null
+ * @see BitmapFactory.Options.inJustDecodeBounds
+ * @see BitmapFactory.Options.outMimeType
+ */
+fun File.getImageMimeType(): String? {
+    val options = BitmapFactory.Options().also { it.inJustDecodeBounds = true }
+    BitmapFactory.decodeFile(absolutePath, options)
+    return options.outMimeType
+}
+
+/**
  * 分享文件到第三方应用
  *
  * @param context 上下文
